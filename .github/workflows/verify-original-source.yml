@@ -1,0 +1,23 @@
+name: Verify GameLingoPro Original Source
+on:
+  push:
+    branches: [feature/native-app-webos-hud]
+    paths: ['.github/workflows/verify-original-source.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm native Pro source archive
+        run: |
+          unzip -t GameLingoPro-webOS-baglanti-onarimi.zip | tail -n 2
+          unzip -l GameLingoPro-webOS-baglanti-onarimi.zip | grep -E '(CaptureService.kt|PhoneTvCaptionHub.kt|receiver.js)' | head
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameLingoPro-original-native-source
+          path: GameLingoPro-webOS-baglanti-onarimi.zip
+          compression-level: 0
+          if-no-files-found: error
