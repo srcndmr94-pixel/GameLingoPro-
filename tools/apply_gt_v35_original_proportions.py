@@ -242,6 +242,12 @@ replace_once(service,
 replace_once(service,
 '''                if(fullMenuDetected && newCalls>=5)continue''',
 '''                if(fullMenuDetected && newCalls>=8)continue''')
+replace_once(unit,
+'''        assertTrue(GtSourceBox.hold(3,5500L))''',
+'''        assertFalse(GtSourceBox.hold(3,5500L))''')
+replace_once(unit,
+'''        assertTrue(GtSourceBox.hold(50,30000L))''',
+'''        assertFalse(GtSourceBox.hold(50,30000L))''')
 tests.mkdir(parents=True,exist_ok=True)
 (tests/'GtVisibleOnlyTest.kt').write_text(r'''package com.example.altyazi
 import org.junit.Assert.*
