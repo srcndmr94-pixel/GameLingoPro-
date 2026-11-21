@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [fix/dialogue-natural-quality-48]
+    branches: [fix/gtx-slang-system-ui-49]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -23,6 +23,7 @@ on:
       - 'tools/apply_gt_v44_test_alignment.py'
       - 'tools/apply_gt_v47_restore_all_colors.py'
       - 'tools/apply_gt_v48_dialogue_quality.py'
+      - 'tools/apply_gt_v49_alert_slang.py'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   pull_request:
     branches: [main]
@@ -38,6 +39,7 @@ on:
       - 'tools/apply_gt_v44_test_alignment.py'
       - 'tools/apply_gt_v47_restore_all_colors.py'
       - 'tools/apply_gt_v48_dialogue_quality.py'
+      - 'tools/apply_gt_v49_alert_slang.py'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   workflow_dispatch:
 permissions:
@@ -255,6 +257,16 @@ jobs:
           grep -q 'MlKitTranslator' app/src/main/java/com/example/altyazi/GtNativeEngine.kt
           ! grep -q 'gtQuestBoxesOnly' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtDialogueQuality48Test.kt
+      - name: Ignore PS5 shell notices and improve spoken slang translations
+        run: python3 tools/apply_gt_v49_alert_slang.py .
+      - name: Verify 4.9 game-notice and slang fixes preserve existing translations
+        run: |
+          grep -q 'GameLingoPro-4.9-GameAlertSlangFix' app/build.gradle.kts
+          grep -q 'private val psShell=Regex' app/src/main/java/com/example/altyazi/GtGameNotice.kt
+          grep -q 'slinging our shit' app/src/main/java/com/example/altyazi/GtDialogueQuality.kt
+          grep -q 'GtDialogueQuality.polish' app/src/main/java/com/example/altyazi/GtNativeEngine.kt
+          ! grep -q 'gtQuestBoxesOnly' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtObservedLog49Test.kt
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
@@ -266,12 +278,13 @@ jobs:
           cp app/src/main/java/com/example/altyazi/GtGameNotice.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtDialogueQuality.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtNativeEngine.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtGameNotice.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtStyleContract.kt dist/source/
           cp app/src/main/java/com/example/altyazi/CaptureService.kt dist/source/
           cp app/src/main/java/com/example/altyazi/Overlay.kt dist/source/
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-V48-Source-Inspection
+          name: GameLingoPro-V49-Source-Inspection
           path: dist/source
           if-no-files-found: error
       - uses: actions/setup-java@v5
@@ -293,6 +306,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-4.8-DialogueQuality
+          name: GameLingoPro-4.9-GameAlertSlangFix
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
