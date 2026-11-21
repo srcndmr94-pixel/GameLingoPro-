@@ -69,6 +69,15 @@ span('    fun oncekiYaz(value: String?) {','\n    /** Önceki satırı solarak k
 ov.write_text(s,encoding="utf-8")
 # Change applied settings while a screen capture is still active.
 c=cap.read_text(encoding="utf-8")
+# The v2.3 landscape override silently forced 14-20sp regardless of user choice.
+old_size='''boyutSp = if (screenWidth > screenHeight) {
+                prefs.subtitleSize.toFloat().coerceIn(14f, 20f)
+            } else if (tv) maxOf(prefs.subtitleSize * 1.5f, 26f)
+            else prefs.subtitleSize.toFloat(),'''
+new_size='''boyutSp = if (tv) maxOf(prefs.subtitleSize * 1.5f, 26f)
+            else prefs.subtitleSize.toFloat(),'''
+if c.count(old_size)!=1: raise RuntimeError("Old landscape size override differs; investigate")
+c=c.replace(old_size,new_size,1)
 a='''            var lastTv = prefs.tvMode'''
 if c.count(a)!=1:raise RuntimeError("TV state anchor changed")
 c=c.replace(a,a+'''
