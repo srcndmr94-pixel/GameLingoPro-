@@ -10,6 +10,7 @@ on:
       - 'tools/apply_gt_v29_adjustable_style.py'
       - 'tools/apply_gt_v291_size_fix.py'
       - 'tools/gt_v30_patch.zlib.b64'
+      - 'tools/apply_gt_v301_real_settings.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -76,23 +77,35 @@ jobs:
           python3 /tmp/apply_gt_exact_renderer_v30.py .
           # Remove two malformed test expectations; renderer/source checks remain.
           sed -i '/assertTrue(prefs.contains(".putInt(/d' app/src/test/java/com/example/altyazi/GtExactOverlayTest.kt
+      - name: Bind GT-only renderer to real caption preferences
+        run: python3 tools/apply_gt_v301_real_settings.py .
+      - name: Verify one active GameTranslator layer and live user choices
+        run: |
+          grep -q 'overlay = GtExactOverlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          ! grep -q 'overlay = Overlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'tv.setTextColor(style.yaziRengi)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtStyleContract.captionSp(style.boyutSp)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtStyleContract.hudSp(style.boyutSp)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          ! grep -q 'gtExactRendererV30Reset' app/src/main/java/com/example/altyazi/Prefs.kt
+          grep -q 'GameLingoPro-3.0.1-GT-Only' app/build.gradle.kts
+          test -f app/src/test/java/com/example/altyazi/GtStyleContractTest.kt
       - name: Verify GT-only renderer, original package and independent HUD
         run: |
           grep -q 'overlay = GtExactOverlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
           ! grep -q 'overlay = Overlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
-          grep -q 'shape(184,10)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
-          grep -q 'shape(247,6)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtStyleContract.subtitleAlpha(style.arkaAlfa)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtStyleContract.hudAlpha(style.arkaAlfa)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
           grep -q 'GtAllHud.group' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
           test -f app/src/test/java/com/example/altyazi/GtExactOverlayTest.kt
       - name: Verify GT default subtitle size and one active renderer
         run: |
-          grep -q 'GameLingoPro-3.0-GT-ExactOverlay' app/build.gradle.kts
+          grep -q 'GameLingoPro-3.0.1-GT-Only' app/build.gradle.kts
           grep -q 'subtitleStyle(target)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
           test -f app/src/test/java/com/example/altyazi/GtRenderedSizeTest.kt
       - name: Verify selected subtitle settings control all rendered areas
         run: |
-          grep -q 'GameLingoPro-3.0-GT-ExactOverlay' app/build.gradle.kts
+          grep -q 'GameLingoPro-3.0.1-GT-Only' app/build.gradle.kts
           grep -q 't.setTextColor(stil.yaziRengi)' app/src/main/java/com/example/altyazi/Overlay.kt
           grep -q 'lastGTStyle' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtActualAppearanceTest.kt
@@ -100,13 +113,13 @@ jobs:
         run: |
           grep -q 'GtAllHud.group' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'gtMultiHudV28Configured' app/src/main/java/com/example/altyazi/Prefs.kt
-          grep -q 'GameLingoPro-3.0-GT-ExactOverlay' app/build.gradle.kts
+          grep -q 'GameLingoPro-3.0.1-GT-Only' app/build.gradle.kts
           grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtAllHudTest.kt
       - name: Verify original identity and new caption style
         run: |
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
-          grep -q 'GameLingoPro-3.0-GT-ExactOverlay' app/build.gradle.kts
+          grep -q 'GameLingoPro-3.0.1-GT-Only' app/build.gradle.kts
           grep -q 'GtNativeEngine.translate(source, fast)' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'Color.red(stil.arkaRenk)' app/src/main/java/com/example/altyazi/Overlay.kt
           grep -q 't.maxLines = Int.MAX_VALUE' app/src/main/java/com/example/altyazi/Overlay.kt
@@ -130,6 +143,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-3.0-GT-OnlyOverlay
+          name: GameLingoPro-3.0.1-GT-Only-Appearance
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
