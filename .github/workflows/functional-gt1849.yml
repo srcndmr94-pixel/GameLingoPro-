@@ -1,0 +1,71 @@
+name: GameLingoPro - v1.8.49 native Android
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/gt1849-left-right-hud
+    paths:
+      - '.github/workflows/functional-gt1849.yml'
+      - 'tools/prepare_gt1849_mobile.py'
+      - 'tools/gametranslator_1849_hud/**'
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get exact GameTranslator v1.8.49 source
+        shell: bash
+        run: |
+          git clone --depth 1 --branch v1.8.49 \
+            https://gitlab.com/sefflex/GameTranslator.git "$RUNNER_TEMP/GameLingoPro"
+      - name: Prepare GameLingoPro with right/left HUD
+        run: python3 tools/prepare_gt1849_mobile.py "$RUNNER_TEMP/GameLingoPro"
+      - name: Install native Chiaki source
+        shell: bash
+        run: |
+          git clone --depth 1 --recurse-submodules --shallow-submodules \
+            https://github.com/streetpea/chiaki-ng.git \
+            "$RUNNER_TEMP/GameLingoPro/third-party/chiaki-ng"
+          test -f "$RUNNER_TEMP/GameLingoPro/third-party/chiaki-ng/lib/CMakeLists.txt"
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Prepare Android native tools
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq protobuf-compiler cmake ninja-build
+          python3 -m pip install --user --break-system-packages protobuf grpcio-tools
+          echo "GT_PYTHON=$(which python3)" >> "$GITHUB_ENV"
+          echo "GT_PROTOC=$(which protoc)" >> "$GITHUB_ENV"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'cmake;3.22.1' 'ndk;27.0.12077973' 'platforms;android-35'
+      - name: Flutter dependencies
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/GameLingoPro/mobile"
+          flutter --version
+          flutter pub get
+      - name: Flutter tests
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/GameLingoPro/mobile"
+          flutter test
+      - name: Build native PS Remote Play APK
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/GameLingoPro/mobile"
+          flutter build apk --debug --target-platform android-arm64
+          test -s build/app/outputs/flutter-apk/app-debug.apk
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          cp build/app/outputs/flutter-apk/app-debug.apk "$GITHUB_WORKSPACE/dist/GameLingoPro-native-debug.apk"
+      - name: Upload GameLingoPro APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GameLingoPro-native-1849
+          path: dist/GameLingoPro-native-debug.apk
+          if-no-files-found: error
