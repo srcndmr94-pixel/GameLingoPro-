@@ -102,11 +102,15 @@ jobs:
           ar t ../GameLingoPro-webOS-HUD-1.1.0.ipk
           cd ../..
           cp app/build/outputs/apk/debug/app-debug.apk dist/GameLingoPro-Android-OCR21-debug.apk
+      - name: Ensure deliverables were both created
+        run: |
+          test -s dist/GameLingoPro-Android-OCR21-debug.apk
+          test -s dist/GameLingoPro-webOS-HUD-1.1.0.ipk
       - name: Upload native GameLingoPro APK and webOS IPK
         uses: actions/upload-artifact@v4
         with:
           name: GameLingoPro-Original-App-OCR21
           path: |
-            dist/GameLingoPro-Android-HUD-debug.apk
+            dist/GameLingoPro-Android-OCR21-debug.apk
             dist/GameLingoPro-webOS-HUD-1.1.0.ipk
           if-no-files-found: error
