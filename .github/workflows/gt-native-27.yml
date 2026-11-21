@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [feature/gt-original-proportions-hold-35]
+    branches: [feature/gt-scene-phone-messages-36]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -16,6 +16,7 @@ on:
       - 'tools/apply_gt_v33_fixed_hud_font.py'
       - 'tools/apply_gt_v34_source_geometry.py'
       - 'tools/apply_gt_v35_original_proportions.py'
+      - 'tools/apply_gt_v36_scene_phone.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -177,18 +178,29 @@ jobs:
           grep -q 'if (text.isEmpty() && shownSource.isNotBlank()) return' app/src/main/java/com/example/altyazi/CaptureService.kt
           ! grep -q 'gtHeldLabels.removeAll{held->hudNow-held.lastSeenMs>120000L}' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'fontPx\*.42f' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+      - name: Switch translated UI by real menu, phone and gameplay scenes
+        run: python3 tools/apply_gt_v36_scene_phone.py .
+      - name: Verify native OCR-aligned in-game phone messages
+        run: |
+          grep -q 'GameLingoPro-3.6-GT-ScenePhone' app/build.gradle.kts
+          grep -q 'GtPhoneUi.isPhoneScreen' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'GtUiScene.shouldSwitch' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'card.phoneBubble' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          test -f app/src/test/java/com/example/altyazi/GtPhoneUiSceneTest.kt
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
           cp app/src/main/java/com/example/altyazi/GtExactOverlay.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtAllHud.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtPhoneUi.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtUiScene.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtMenuUi.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtStyleContract.kt dist/source/
           cp app/src/main/java/com/example/altyazi/CaptureService.kt dist/source/
           cp app/src/main/java/com/example/altyazi/Overlay.kt dist/source/
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-V35-Source-Inspection
+          name: GameLingoPro-V36-Source-Inspection
           path: dist/source
           if-no-files-found: error
       - uses: actions/setup-java@v5
@@ -210,6 +222,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-3.5-GT-OriginalSize-Persistent
+          name: GameLingoPro-3.6-GT-Phone-Scene-Fix
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
