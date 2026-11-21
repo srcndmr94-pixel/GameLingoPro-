@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [fix/menu-first-visible-40]
+    branches: [fix/selected-map-panels-41]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -16,6 +16,7 @@ on:
       - 'tools/apply_gt_v33_fixed_hud_font.py'
       - 'tools/apply_gt_v34_source_geometry.py'
       - 'tools/apply_gt_v40_menu_first.py'
+      - 'tools/apply_gt_v41_selected_panels.py'
   pull_request:
     branches: [main]
     paths:
@@ -23,6 +24,7 @@ on:
       - 'tools/apply_gt_v31_menus.py'
       - 'tools/apply_gt_v34_source_geometry.py'
       - 'tools/apply_gt_v40_menu_first.py'
+      - 'tools/apply_gt_v41_selected_panels.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -179,11 +181,19 @@ jobs:
         run: python3 tools/apply_gt_v40_menu_first.py .
       - name: Verify incremental menu renderer is active
         run: |
-          grep -q 'GameLingoPro-4.0-GT-FastMenu' app/build.gradle.kts
+          grep -q 'GameLingoPro-4.1-GT-SelectedMapPanels' app/build.gradle.kts
           grep -q 'GtMenuPriority.score' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'if(fullMenuDetected && newCalls>=3)continue' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'First translated panel' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtMenuPriorityTest.kt
+      - name: Translate selected rectangular game-map information boxes
+        run: python3 tools/apply_gt_v41_selected_panels.py .
+      - name: Verify selected box while visible
+        run: |
+          grep -q 'GameLingoPro-4.1-SelectedMapPanels' app/build.gradle.kts
+          grep -q 'GtSelectedMapPanel.isMap' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'gtPanelKeys\[slot\]==identity' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtSelectedMapPanelTest.kt
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
@@ -191,12 +201,13 @@ jobs:
           cp app/src/main/java/com/example/altyazi/GtAllHud.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtMenuUi.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtMenuPriority.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtSelectedMapPanel.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtStyleContract.kt dist/source/
           cp app/src/main/java/com/example/altyazi/CaptureService.kt dist/source/
           cp app/src/main/java/com/example/altyazi/Overlay.kt dist/source/
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-V40-Source-Inspection
+          name: GameLingoPro-V41-Source-Inspection
           path: dist/source
           if-no-files-found: error
       - uses: actions/setup-java@v5
@@ -218,6 +229,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-4.0-GT-FastMenu
+          name: GameLingoPro-4.1-GT-SelectedMapPanels
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
