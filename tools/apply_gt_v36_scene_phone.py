@@ -152,8 +152,10 @@ once(cap,
 
 # Rotation/capture reset must also reset the finite state machine.
 once(cap,
-'''                        gtLastMenuMode=null''',
-'''                        gtLastMenuMode=null
+'''                        gtHudLastConfirmedAtMs=0L
+                        gtLastMenuMode=null''',
+'''                        gtHudLastConfirmedAtMs=0L
+                        gtLastMenuMode=null
                         gtActiveSurface="game"
                         gtObservedSurface="game"
                         gtSurfaceSeen=0
