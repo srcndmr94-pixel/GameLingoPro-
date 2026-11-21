@@ -100,6 +100,31 @@ replace_once(service,
         if (text.isEmpty() && shownSource.isNotBlank()) return
         if (text.isEmpty()) {''')
 
+# If MediaProjection temporarily returns no frame, there is no reliable
+# observation that the English source vanished. Preserve the caption; the
+# capture-stop/rotation path remains responsible for explicit cleanup.
+replace_once(service,
+'''                        if (shownSource.isNotEmpty() && lastFrameMs > 0 && nowMs - lastFrameMs > STALE_MS) {
+                            shownSource = ""
+                            candidate = ""
+                            candidateSeen = 0
+                            translatingFor = ""
+                            subtitleGeneration.invalidate()
+                            showSubtitle(null)
+                            if (!staleWarned) {
+                                staleWarned = true
+                                log("GÖRÜNTÜ GELMİYOR: ${STALE_MS / 1000} sn'dir yeni kare yok, eski çeviri kaldırıldı.")
+                            }
+                        }''',
+'''                        if (shownSource.isNotEmpty() && lastFrameMs > 0 && nowMs - lastFrameMs > STALE_MS) {
+                            // No new frame is NOT evidence that English left.
+                            // Keep the last readable line; recover capture as before.
+                            if (!staleWarned) {
+                                staleWarned = true
+                                log("GÖRÜNTÜ GELMİYOR: ${STALE_MS / 1000} sn; son çeviri korundu.")
+                            }
+                        }''')
+
 # Text fitting uses actual OCR bounds. For translations that contain more
 # letters than English, scale down enough to fit rather than enlarge their
 # background or assign the same 12/28sp size to every source label.
