@@ -46,6 +46,11 @@ jobs:
           grep -q 'cbProButtonSfx' app/src/main/res/layout/activity_main.xml
       - name: Apply animated GameLingoPro launch screen
         run: python3 tools/apply_pro_intro.py
+      - name: Apply four-stage original artwork
+        run: python3 tools/apply_pro_intro_artwork.py
+      - name: Verify original intro frames
+        run: |
+          for n in 1 2 3 4; do test -s app/src/main/res/drawable-nodpi/intro_phase$n.webp; done
       - name: Verify animated launcher and intro audio
         shell: bash
         run: |
