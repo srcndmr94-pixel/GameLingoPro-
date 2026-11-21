@@ -51,7 +51,7 @@ replace_once(geometry,
     // A translation stays in its source rect until the app observes a new
     // source in that rect or a capture/scene reset explicitly clears labels.
     fun hold(misses:Int,sinceSeenMs:Long):Boolean =
-        misses >= 0 && sinceSeenMs >= 0L''')
+        misses<2''')
 
 # Do not let failure to re-read an opaque translation window clear a visible
 # caption. This applies to fixed-location HUD and menu text.
@@ -65,9 +65,8 @@ replace_once(service,
         // OCR results, but replace a previous card when new source takes over
         // the same rectangle. Stale cards expire only after 120 seconds.
         gtHeldLabels.removeAll{held->hudNow-held.lastSeenMs>120000L}''',
-'''        // Partial/blank OCR cannot prove that English was removed. Hold
-        // previous regions; replacing their source is handled below by
-        // GtSourceBox.nearby. A capture reset clears all regions explicitly.''')
+'''        // Only currently observed English labels are displayed.
+        gtHeldLabels.clear()''')
 
 # Dialogue captions use a separate OCR pipeline. An OCR blank is an
 # inconclusive read (especially if the floating caption covers the source),
@@ -97,7 +96,7 @@ replace_once(service,
 
         // Keep the caption when an OCR scan misses visible English;
         // never dismiss just because a fixed time limit has elapsed.
-        if (text.isEmpty() && shownSource.isNotBlank()) return
+        if (text.isEmpty() && shownSource.isNotBlank() && !gtUncoveredScan) return
         if (text.isEmpty()) {''')
 
 # If MediaProjection temporarily returns no frame, there is no reliable
@@ -158,15 +157,108 @@ replace_once(unit,
         assertEquals(1536,GtSourceBox.width(2000,1536,8))''')
 replace_once(unit,
 '''        assertFalse(GtSourceBox.hold(20,121000L))''',
-'''        assertTrue(GtSourceBox.hold(20,121000L))
-        assertTrue(GtSourceBox.hold(1200,3600000L))''')
+'''        assertFalse(GtSourceBox.hold(20,121000L))
+        assertFalse(GtSourceBox.hold(1200,3600000L))''')
+
+
+# The game's source is hidden by our opaque Turkish overlay. Read English in
+# a fresh uncovered capture, so text is cleared by disappearance, not by TTL.
+replace_once(service,'''    private var gtHudMissingScans=0''',
+'''    private var gtHudMissingScans=0
+    private var gtUncoveredScan=false''')
+replace_once(service,
+'''                    val captureStart = android.os.SystemClock.elapsedRealtime()
+                    val full = grabFull()''',
+'''                    val uncoverSource = !isTv && cycle % 2L == 0L &&
+                        (shownSource.isNotBlank() || lastHudLabels.isNotEmpty())
+                    if(uncoverSource) {
+                        overlay.setSubtitle(null, subtitleAnchorPx)
+                        overlay.clearLabels()
+                        delay(55L)
+                    }
+                    gtUncoveredScan=uncoverSource
+                    val captureStart = android.os.SystemClock.elapsedRealtime()
+                    val full = grabFull()''')
+replace_once(service,
+'''                    if (full == null) {
+                        diagNoFrame++''',
+'''                    if (full == null) {
+                        gtUncoveredScan=false
+                        if(uncoverSource && shownValue.isNotBlank())showSubtitle(shownValue)
+                        if(uncoverSource && lastHudLabels.isNotEmpty())
+                            overlay.setLabels(lastHudLabels)
+                        diagNoFrame++''')
+replace_once(service,
+'''                    processSubtitle(full)
+
+                    if (!isTv''',
+'''                    try {
+                        processSubtitle(full)
+                    } finally {
+                        gtUncoveredScan=false
+                        if(uncoverSource && shownValue.isNotBlank())showSubtitle(shownValue)
+                        if(uncoverSource && lastHudLabels.isNotEmpty())
+                            overlay.setLabels(lastHudLabels)
+                    }
+
+                    if (!isTv''')
+replace_once(service,
+'''        if (!subtitleReadGuard299.shouldOcr(sampleUnchanged, candidateSeen == 1, checkMs)) {''',
+'''        if (!gtUncoveredScan &&
+            !subtitleReadGuard299.shouldOcr(sampleUnchanged, candidateSeen == 1, checkMs)) {''')
+replace_once(service,
+'''            if (emptyFrames >= 6 && shownSource.isNotEmpty() && yeterinceDurdu) {''',
+'''            if (gtUncoveredScan && emptyFrames >= 2 && shownSource.isNotEmpty()) {''')
+replace_once(service,'''            fullMenuDetected = GtMenuUi.isGameMenu(candidates)''',
+'''            fullMenuDetected = GtMenuUi.isGameMenu(candidates)
+            if(fullMenuDetected && shownSource.isNotBlank()) {
+                shownSource=""
+                translatingFor=""
+                subtitleGeneration.invalidate()
+                showSubtitle(null)
+            }''')
+replace_once(service,
+'''        val labels=ArrayList<Overlay.Label>()
+        var newCalls=0
+        for(card in cards){''',
+'''        val labels=ArrayList<Overlay.Label>()
+        var newCalls=0
+        val prioritizedCards=if(fullMenuDetected)
+            cards.sortedByDescending { item ->
+                item.left.toFloat()>smallWidthForHud(full.width)*.48f &&
+                item.top.toFloat()>smallHeightForHud(full.width,full.height)*.22f &&
+                item.top.toFloat()<smallHeightForHud(full.width,full.height)*.75f
+            }
+        else cards
+        for(card in prioritizedCards){''')
+replace_once(service,
+'''                if(fullMenuDetected && newCalls>=5)continue''',
+'''                if(fullMenuDetected && newCalls>=8)continue''')
+tests.mkdir(parents=True,exist_ok=True)
+(tests/'GtVisibleOnlyTest.kt').write_text(r'''package com.example.altyazi
+import org.junit.Assert.*
+import org.junit.Test
+class GtVisibleOnlyTest {
+ @Test fun previousMenuTextCannotStayForever() {
+  assertTrue(GtSourceBox.hold(1,600L))
+  assertFalse(GtSourceBox.hold(2,900L))
+  assertFalse(GtSourceBox.hold(50,120000L))
+ }
+ @Test fun underlyingEnglishIsRechecked() {
+  val s=java.io.File("src/main/java/com/example/altyazi/CaptureService.kt").readText()
+  assertTrue(s.contains("gtUncoveredScan"))
+  assertTrue(s.contains("overlay.setSubtitle(null, subtitleAnchorPx)"))
+  assertTrue(s.contains("prioritizedCards"))
+ }
+}
+''',encoding='utf-8')
 
 s = build.read_text(encoding='utf-8')
 s, n = re.subn(r'(?m)^(\s*)versionCode\s*=\s*\d+',
-               r'\g<1>versionCode = 20261208', s, count=1)
+               r'\g<1>versionCode = 20261211', s, count=1)
 if n != 1: raise RuntimeError('versionCode missing')
 s, n = re.subn(r'(?m)^(\s*)versionName\s*=\s*"[^"]+"',
-               r'\g<1>versionName = "GameLingoPro-3.5-GT-OriginalSize-Hold"',s,count=1)
+               r'\g<1>versionName = "GameLingoPro-3.8-VisibleOnly-RightPanel"',s,count=1)
 if n != 1: raise RuntimeError('versionName missing')
 build.write_text(s,encoding='utf-8')
 print('GameLingoPro 3.5: source OCR font and box; no HUD/menu timeout while OCR misses')
