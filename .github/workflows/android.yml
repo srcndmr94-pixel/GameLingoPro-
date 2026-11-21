@@ -35,6 +35,15 @@ jobs:
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
       - name: Apply GameLingo Pro interface changes
         run: python3 tools/apply_pro_brand.py
+      - name: Add GameLingo Pro button audio feedback
+        run: python3 tools/apply_pro_button_sounds.py
+      - name: Verify sound controls and resources
+        shell: bash
+        run: |
+          test -f app/src/main/java/com/example/altyazi/ProClickFeedback.kt
+          test -f app/src/main/res/raw/pro_ui_click.wav
+          test -f app/src/main/res/raw/pro_ui_confirm.wav
+          grep -q 'cbProButtonSfx' app/src/main/res/layout/activity_main.xml
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
