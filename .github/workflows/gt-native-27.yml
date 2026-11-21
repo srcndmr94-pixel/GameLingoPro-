@@ -7,6 +7,7 @@ on:
       - 'tools/apply_gt_v27_engine.py'
       - 'tools/apply_gt_v27_subtitle_style.py'
       - 'tools/apply_gt_v28_all_hud.py'
+      - 'tools/apply_gt_v29_adjustable_style.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -56,11 +57,19 @@ jobs:
         run: python3 tools/apply_gt_v27_subtitle_style.py .
       - name: Enable GameTranslator-style all-screen game HUD
         run: python3 tools/apply_gt_v28_all_hud.py .
+      - name: Replace legacy visual overrides with adjustable GT glass renderer
+        run: python3 tools/apply_gt_v29_adjustable_style.py .
+      - name: Verify selected subtitle settings control all rendered areas
+        run: |
+          grep -q 'GameLingoPro-2.9-GT-Adjustable' app/build.gradle.kts
+          grep -q 't.setTextColor(stil.yaziRengi)' app/src/main/java/com/example/altyazi/Overlay.kt
+          grep -q 'lastGTStyle' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtActualAppearanceTest.kt
       - name: Verify all HUD zones, source grouping and Pro identity
         run: |
           grep -q 'GtAllHud.group' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'gtMultiHudV28Configured' app/src/main/java/com/example/altyazi/Prefs.kt
-          grep -q 'GameLingoPro-2.8-GT-AllHUD' app/build.gradle.kts
+          grep -q 'GameLingoPro-2.9-GT-Adjustable' app/build.gradle.kts
           grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtAllHudTest.kt
       - name: Verify original identity and new caption style
@@ -90,6 +99,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-2.8-GT-AllScreenHUD
+          name: GameLingoPro-2.9-GT-AllHUD-Adjustable
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
