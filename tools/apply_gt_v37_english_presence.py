@@ -155,6 +155,29 @@ change(cap,
 '''        shownSource = source
         gtEnglishMissing=0
         shownValue = value''')
+# A dead screen-capture session cannot keep the last Turkish caption forever.
+# If no video frames arrive at all, use the pre-existing recovery threshold to
+# clear the stale line. This is a failure safeguard, not a reading-duration TTL.
+ct=cap.read_text(encoding='utf8')
+anchor='''                        if (shownSource.isNotEmpty() && lastFrameMs > 0 && nowMs - lastFrameMs > STALE_MS) {'''
+a=ct.find(anchor)
+b=ct.find('''                        if (rotatedAtMs > 0''',a+len(anchor)) if a>=0 else -1
+if a<0 or b<0:raise RuntimeError('Expected old v3.5 capture-failure safeguard missing')
+ct=ct[:a]+'''                        if (shownSource.isNotEmpty() && lastFrameMs > 0 && nowMs - lastFrameMs > STALE_MS) {
+                            shownSource=""
+                            translatingFor=""
+                            candidate=""
+                            candidateSeen=0
+                            subtitleGeneration.invalidate()
+                            showSubtitle(null)
+                            if (!staleWarned) {
+                                staleWarned=true
+                                log("GÖRÜNTÜ GELMİYOR: yakalama durdu; son altyazı temizlendi.")
+                            }
+                        }
+'''+ct[b:]
+cap.write_text(ct,encoding='utf8')
+
 # Re-read menu/HUD on unobstructed frame instead of endlessly holding
 # stale translated mission text after exiting the map.
 change(cap,
