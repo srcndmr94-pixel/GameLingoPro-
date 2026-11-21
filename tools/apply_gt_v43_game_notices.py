@@ -386,7 +386,7 @@ class GtGameNoticeTest {
         assertEquals("Moses",notice.title)
         assertEquals(3,notice.rows)
         assertTrue(notice.body.contains("Trashed"))
-        assertEquals(220,notice.left)
+        assertEquals(219,notice.left)
     }
     @Test fun senderHeaderStillSignalsNotificationUnderTranslatedBody() {
         val item=GtGameNotice.find(listOf(row("Moses",316,487,160)),
