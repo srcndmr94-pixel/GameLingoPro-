@@ -20,6 +20,7 @@ on:
       - 'tools/apply_gt_v42_panel_selection_clear.py'
       - 'tools/apply_gt_v43_game_notices.py'
       - 'tools/apply_gt_v44_rect_overlay.py'
+      - 'tools/apply_gt_v44_test_alignment.py'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   pull_request:
     branches: [main]
@@ -32,6 +33,7 @@ on:
       - 'tools/apply_gt_v42_panel_selection_clear.py'
       - 'tools/apply_gt_v43_game_notices.py'
       - 'tools/apply_gt_v44_rect_overlay.py'
+      - 'tools/apply_gt_v44_test_alignment.py'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   workflow_dispatch:
 permissions:
@@ -227,6 +229,8 @@ jobs:
           grep -q 'val useRect=card.fitSourceBox' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
           grep -q 'frameWidth=width,frameHeight=height,fitSourceBox=true' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtExactMapRegions44Test.kt
+      - name: Align prior OCR regression assertions with new source presence checks
+        run: python3 tools/apply_gt_v44_test_alignment.py
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
