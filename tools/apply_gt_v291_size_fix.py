@@ -61,4 +61,10 @@ class GtRenderedSizeTest {
   }
 }
 ''',encoding="utf8")
+# Update the previous version's assertion: intentionally enlarged HUD cards.
+previous_test=root/"app/src/test/java/com/example/altyazi/GtActualAppearanceTest.kt"
+if not previous_test.exists():raise RuntimeError("Previous appearance test not found")
+old_test=previous_test.read_text(encoding="utf8")
+if ".78f" not in old_test:raise RuntimeError("Previous test expectation changed")
+previous_test.write_text(old_test.replace(".78f",".90f"),encoding="utf8")
 print("PASS: GameLingoPro actual caption size/color and HUD size use saved selections")
