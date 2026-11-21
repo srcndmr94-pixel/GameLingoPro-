@@ -28,7 +28,7 @@ def replace_once(file, old, new):
         raise RuntimeError(f"Unexpected source at {file}: {old[:100]!r} ({s.count(old)})")
     file.write_text(s.replace(old, new, 1), encoding="utf-8")
 
-marker = "    /** Flag visibly literal idioms, never invent a replacement translation. */"
+marker = "    /** Warn on provable idiom errors; do not fabricate a replacement. */"
 guard = r'''    /** A NEW trailing clause is not duplicate OCR of its earlier first line. */
     fun meaningfulExpansion(incoming: String, older: String): Boolean {
         fun normalizeWords(t: String): String = t.lowercase(Locale.ROOT)
