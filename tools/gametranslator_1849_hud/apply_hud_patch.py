@@ -171,22 +171,29 @@ import com.gametranslator.gametranslator_mobile.core.HudRegionSink''',path)
     s=replace(s,anchor,hud+anchor,path)
     set_changed(path,s)
 
-    # Fit long Turkish mission/notification messages without pushing the right HUD off-screen.
-    path='tv/webos/app.js';s=get_text(z,path)
-    s=replace(s,"    var boxWidth = (Math.min(1, box.right + REGION_PAD) - left) * width;", """    var boxWidth = (Math.min(1, box.right + REGION_PAD) - left) * width;
-    var isRightHud = id.indexOf('hud_right_') === 0;""",path)
-    old="""    el.style.whiteSpace = '';
-    el.style.left = (left * 100) + '%';
-    el.style.width = Math.max(60, Math.round(boxWidth)) + 'px';"""
-    new="""    el.style.whiteSpace = 'pre-line';
-    // Notifications on the right grow LEFT; mission boxes on the left grow RIGHT.
-    var expanded = id.indexOf('hud_') === 0 ? Math.min(width - 4, Math.max(boxWidth, Math.min(width * 0.46, boxWidth * 1.5))) : boxWidth;
-    var start = isRightHud ? (box.right + REGION_PAD) * width - expanded : left * width;
-    start = Math.max(2, Math.min(width - expanded - 2, start));
-    el.style.left = (start / width * 100) + '%';
-    el.style.width = Math.max(60, Math.round(expanded)) + 'px';"""
-    s=replace(s,old,new,path)
-    set_changed(path,s)
+    # webOS 1.0.14 has region boxes; upstream Android source does not ship that exact JS.
+    # Keep stock webOS app here and use the separately supplied 1.0.14 receiver on LG.
+    if 'var boxWidth = (Math.min(1, box.right + REGION_PAD) - left) * width;' in get_text(z,'tv/webos/app.js'):
+        # Fit long Turkish mission/notification messages without pushing the right HUD off-screen.
+        path='tv/webos/app.js';s=get_text(z,path)
+        s=replace(s,"    var boxWidth = (Math.min(1, box.right + REGION_PAD) - left) * width;", """    var boxWidth = (Math.min(1, box.right + REGION_PAD) - left) * width;
+        var isRightHud = id.indexOf('hud_right_') === 0;""",path)
+        old="""    el.style.whiteSpace = '';
+        el.style.left = (left * 100) + '%';
+        el.style.width = Math.max(60, Math.round(boxWidth)) + 'px';"""
+        new="""    el.style.whiteSpace = 'pre-line';
+        // Notifications on the right grow LEFT; mission boxes on the left grow RIGHT.
+        var expanded = id.indexOf('hud_') === 0 ? Math.min(width - 4, Math.max(boxWidth, Math.min(width * 0.46, boxWidth * 1.5))) : boxWidth;
+        var start = isRightHud ? (box.right + REGION_PAD) * width - expanded : left * width;
+        start = Math.max(2, Math.min(width - expanded - 2, start));
+        el.style.left = (start / width * 100) + '%';
+        el.style.width = Math.max(60, Math.round(expanded)) + 'px';"""
+        s=replace(s,old,new,path)
+        set_changed(path,s)
+
+    else:
+        s=get_text(z,'tv/webos/app.js')
+        print('webOS embedded version predates 1.0.14; phone HUD requires 1.0.14 receiver')
 
     # Code validation anchors and output: all new files are present without replacing existing menu screens.
     assert 'sideHudEnabled' in changed[ROOT+base+'Engine.kt'].decode('utf-8')
