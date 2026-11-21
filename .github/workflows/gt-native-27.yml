@@ -174,7 +174,7 @@ jobs:
         run: |
           grep -q 'GameLingoPro-3.8-VisibleOnly-RightPanel' app/build.gradle.kts
           grep -q 'source.coerceAtLeast(1)+padding.coerceAtLeast(0)' app/src/main/java/com/example/altyazi/GtSourceBox.kt
-          grep -q 'if (text.isEmpty() && shownSource.isNotBlank()) return' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -Fq 'if (text.isEmpty() && shownSource.isNotBlank() && !gtUncoveredScan) return' app/src/main/java/com/example/altyazi/CaptureService.kt
           ! grep -q 'gtHeldLabels.removeAll{held->hudNow-held.lastSeenMs>120000L}' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'fontPx\*.42f' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
           grep -q 'gtUncoveredScan' app/src/main/java/com/example/altyazi/CaptureService.kt
