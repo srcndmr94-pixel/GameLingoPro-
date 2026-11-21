@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'GameLingoPro-guncel-kaynak.zip'
+      - 'GameLingoPro-*.zip'
       - '.github/workflows/android.yml'
 permissions:
   contents: read
@@ -18,8 +18,10 @@ jobs:
         run: |
           python3 - <<'PY'
           import pathlib, zipfile
-          archive=pathlib.Path('GameLingoPro-guncel-kaynak.zip')
-          if not archive.is_file(): raise SystemExit('Missing uploaded source ZIP')
+          candidates = [pathlib.Path(n) for n in ('GameLingoPro-webOS-baglanti-onarimi.zip', 'GameLingoPro-webOS-bridge-kaynak.zip', 'GameLingoPro-pro-baglanti-duzeltmesi.zip', 'GameLingoPro-guncel-kaynak.zip')]
+          archive=next((p for p in candidates if p.is_file()), None)
+          print('Selected source archive:', archive)
+          if archive is None: raise SystemExit('Missing uploaded source ZIP')
           with zipfile.ZipFile(archive) as z:
               for item in z.infolist():
                   p=pathlib.PurePosixPath(item.filename)
@@ -29,6 +31,8 @@ jobs:
           PY
           test -f settings.gradle.kts
           test -f app/build.gradle.kts
+          test -f app/debug.keystore
+          grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
