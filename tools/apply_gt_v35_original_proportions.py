@@ -102,35 +102,10 @@ replace_once(service,
 # If MediaProjection temporarily returns no frame, there is no reliable
 # observation that the English source vanished. Preserve the caption; the
 # capture-stop/rotation path remains responsible for explicit cleanup.
-replace_once(service,
-'''                        if (shownSource.isNotEmpty() && lastFrameMs > 0 && nowMs - lastFrameMs > STALE_MS) {
-                            shownSource = ""
-                            candidate = ""
-                            candidateSeen = 0
-                            translatingFor = ""
-                            subtitleGeneration.invalidate()
-                            showSubtitle(null)
-                            if (!staleWarned) {
-                                staleWarned = true
-                                log("GÖRÜNTÜ GELMİYOR: ${STALE_MS / 1000} sn'dir yeni kare yok, eski çeviri kaldırıldı.")
-                            }
-                        }''',
-'''                        if (shownSource.isNotEmpty() && lastFrameMs > 0 && nowMs - lastFrameMs > STALE_MS) {
-                            // Stop covering the game when source is unavailable.
-                            shownSource=""
-                            translatingFor=""
-                            candidate=""
-                            candidateSeen=0
-                            subtitleGeneration.invalidate()
-                            showSubtitle(null)
-                            gtHeldLabels.clear()
-                            lastHudLabels=emptyList()
-                            overlay.clearLabels()
-                            if (!staleWarned) {
-                                staleWarned = true
-                                log("GÖRÜNTÜ GELMİYOR: eski çeviri temizlendi.")
-                            }
-                        }''')
+# Keep the ORIGINAL CaptureService no-frame guard unchanged.
+# It already clears shownSource, invalidates translations, and hides subtitle
+# after STALE_MS. Previous exact-match replacement did not match upstream
+# because the original diagnostic log has an additional explanatory suffix.
 
 # Text fitting uses actual OCR bounds. For translations that contain more
 # letters than English, scale down enough to fit rather than enlarge their
@@ -212,6 +187,7 @@ replace_once(service,
 replace_once(service,
 '''                    processSubtitle(full)
 
+                    // Menü çevirisi tüm ekranı okur, ağırdır: TV'de kapalı.
                     if (!isTv''',
 '''                    try {
                         processSubtitle(full)
@@ -223,6 +199,7 @@ replace_once(service,
                             overlay.setLabels(lastHudLabels)
                     }
 
+                    // Menü çevirisi tüm ekranı okur, ağırdır: TV'de kapalı.
                     if (!isTv''')
 replace_once(service,
 '''        if (bandDegismedi(band)) {''',
