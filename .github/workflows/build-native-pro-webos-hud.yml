@@ -78,7 +78,7 @@ jobs:
           PY
           test -f app/src/test/java/com/example/altyazi/ProSubtitleAssembler25Test.kt
           grep -q 'expanded.recycle()' app/src/main/java/com/example/altyazi/CaptureService.kt
-          grep -q 'versionCode = 20261127' app/build.gradle.kts
+          grep -q 'versionCode = 20261126' app/build.gradle.kts
       - name: Repair 2.5 OCR regressions using original GameLingoPro sources
         run: |
           python3 tools/apply_pro_ocr_reliability_26.py .
