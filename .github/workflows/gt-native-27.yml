@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [feature/gt-exact-only-overlay]
+    branches: [feature/monitor-webos26-browser]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -11,6 +11,8 @@ on:
       - 'tools/apply_gt_v291_size_fix.py'
       - 'tools/gt_v30_patch.zlib.b64'
       - 'tools/apply_gt_v301_real_settings.py'
+      - 'tools/apply_webos26_receiver.py'
+      - 'tools/webos26_receiver.html'
   workflow_dispatch:
 permissions:
   contents: read
@@ -79,6 +81,31 @@ jobs:
           sed -i '/assertTrue(prefs.contains(".putInt(/d' app/src/test/java/com/example/altyazi/GtExactOverlayTest.kt
       - name: Bind GT-only renderer to real caption preferences
         run: python3 tools/apply_gt_v301_real_settings.py .
+      - name: Install webOS26 phone-hosted browser and GT HUD receiver
+        run: python3 tools/apply_webos26_receiver.py .
+      - name: Verify webOS26 receiver JS and original Android bridge endpoint
+        run: |
+          test -s app/src/main/assets/gamelingopro_webos26.html
+          grep -q 'path.startsWith("/index.html")' app/src/main/java/com/example/altyazi/PhoneBridge.kt
+          grep -q '47323/subtitle' webos/index.html
+          grep -q 'data.regions' webos/index.html
+          grep -q 'GameLingoPro-3.1-webOS26-Ready' app/build.gradle.kts
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("webos/index.html").read_text()
+          Path("/tmp/glp-webos26-browser.js").write_text(s.split("<script>",1)[1].split("</script>",1)[0])
+          PY
+          node --check /tmp/glp-webos26-browser.js
+      - name: Package optional webOS26 app for Developer Mode installs
+        run: |
+          mkdir -p dist/ipk/control dist/ipk/data/usr/palm/applications/com.gamelingo.pro.webos
+          cp webos/index.html webos/appinfo.json dist/ipk/data/usr/palm/applications/com.gamelingo.pro.webos/
+          printf '2.0\n' > dist/ipk/debian-binary
+          printf 'Package: com.gamelingo.pro.webos\nVersion: 1.2.0\nArchitecture: all\nMaintainer: GameLingoPro\nDescription: webOS26 GT Receiver\n' > dist/ipk/control/control
+          tar czf dist/ipk/control.tar.gz -C dist/ipk/control .
+          tar czf dist/ipk/data.tar.gz -C dist/ipk/data .
+          cd dist/ipk && ar q ../GameLingoPro-webOS26-1.2.0.ipk debian-binary control.tar.gz data.tar.gz
+          test -s ../GameLingoPro-webOS26-1.2.0.ipk
       - name: Verify one active GameTranslator layer and live user choices
         run: |
           grep -q 'overlay = GtExactOverlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
@@ -87,7 +114,7 @@ jobs:
           grep -q 'GtStyleContract.captionSp(style.boyutSp)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
           grep -q 'GtStyleContract.hudSp(style.boyutSp)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
           ! grep -q 'gtExactRendererV30Reset' app/src/main/java/com/example/altyazi/Prefs.kt
-          grep -q 'GameLingoPro-3.0.1-GT-Only' app/build.gradle.kts
+          grep -q 'GameLingoPro-3.1-webOS26-Ready' app/build.gradle.kts
           test -f app/src/test/java/com/example/altyazi/GtStyleContractTest.kt
       - name: Verify GT-only renderer, original package and independent HUD
         run: |
@@ -100,12 +127,12 @@ jobs:
           test -f app/src/test/java/com/example/altyazi/GtExactOverlayTest.kt
       - name: Verify GT default subtitle size and one active renderer
         run: |
-          grep -q 'GameLingoPro-3.0.1-GT-Only' app/build.gradle.kts
+          grep -q 'GameLingoPro-3.1-webOS26-Ready' app/build.gradle.kts
           grep -q 'subtitleStyle(target)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
           test -f app/src/test/java/com/example/altyazi/GtRenderedSizeTest.kt
       - name: Verify selected subtitle settings control all rendered areas
         run: |
-          grep -q 'GameLingoPro-3.0.1-GT-Only' app/build.gradle.kts
+          grep -q 'GameLingoPro-3.1-webOS26-Ready' app/build.gradle.kts
           grep -q 't.setTextColor(stil.yaziRengi)' app/src/main/java/com/example/altyazi/Overlay.kt
           grep -q 'lastGTStyle' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtActualAppearanceTest.kt
@@ -113,13 +140,13 @@ jobs:
         run: |
           grep -q 'GtAllHud.group' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'gtMultiHudV28Configured' app/src/main/java/com/example/altyazi/Prefs.kt
-          grep -q 'GameLingoPro-3.0.1-GT-Only' app/build.gradle.kts
+          grep -q 'GameLingoPro-3.1-webOS26-Ready' app/build.gradle.kts
           grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtAllHudTest.kt
       - name: Verify original identity and new caption style
         run: |
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
-          grep -q 'GameLingoPro-3.0.1-GT-Only' app/build.gradle.kts
+          grep -q 'GameLingoPro-3.1-webOS26-Ready' app/build.gradle.kts
           grep -q 'GtNativeEngine.translate(source, fast)' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'Color.red(stil.arkaRenk)' app/src/main/java/com/example/altyazi/Overlay.kt
           grep -q 't.maxLines = Int.MAX_VALUE' app/src/main/java/com/example/altyazi/Overlay.kt
@@ -143,6 +170,8 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-3.0.1-GT-Only-Appearance
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: GameLingoPro-3.1-webOS26-Ready-Appearance
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            dist/GameLingoPro-webOS26-1.2.0.ipk
           if-no-files-found: error
