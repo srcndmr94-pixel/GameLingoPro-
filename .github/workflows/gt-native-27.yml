@@ -57,7 +57,7 @@ jobs:
         run: |
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
           grep -q 'GameLingoPro-2.7-GT-Core' app/build.gradle.kts
-          grep -q 'GtNativeEngine.translate(source,fast)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'GtNativeEngine.translate(source, fast)' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'Color.argb(198, 0, 0, 0)' app/src/main/java/com/example/altyazi/Overlay.kt
           grep -q 't.maxLines = Int.MAX_VALUE' app/src/main/java/com/example/altyazi/Overlay.kt
           test -f app/src/main/assets/GameTranslator-LICENSE.txt
