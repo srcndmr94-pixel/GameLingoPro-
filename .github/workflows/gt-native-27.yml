@@ -15,6 +15,12 @@ on:
       - 'tools/apply_gt_v32_auto_region_settings.py'
       - 'tools/apply_gt_v33_fixed_hud_font.py'
       - 'tools/apply_gt_v34_source_geometry.py'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/gt-native-27.yml'
+      - 'tools/apply_gt_v31_menus.py'
+      - 'tools/apply_gt_v34_source_geometry.py'
   workflow_dispatch:
 permissions:
   contents: read
