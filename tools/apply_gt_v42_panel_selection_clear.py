@@ -40,7 +40,7 @@ once(det,
         }
         val controls=lines.count { row ->
             row.left.toFloat()/w>.76f && row.top.toFloat()/h>.65f &&
-            Regex("(?i)^(?:recenter|2d view|add marker|set destination|exit)\\b")
+            Regex("(?i)^(?:recenter|2d view|add marker|set destination|exit)\\\\b")
                 .containsMatchIn(row.text.trim())
         }
         return topCount>=2 || (topCount>=1 && controls>=1) || controls>=3
