@@ -68,7 +68,7 @@ s=main.read_text(encoding="utf-8")
 needle='        findViewById<View>(R.id.btnAyarGeri)?.setOnClickListener { ayarListesineDon() }'
 if needle not in s:raise SystemExit("Settings wiring changed")
 binding='''        findViewById<View>(R.id.ayarEkranPaylas)?.setOnClickListener {
-            findViewById<View>(R.id.btnConsoleSettings)?.performClick()
+            findViewById<View>(R.id.btnToggle)?.performClick()
         }
         findViewById<View>(R.id.ayarTvKurulum)?.setOnClickListener {
             findViewById<View>(R.id.btnTvGuide)?.performClick()
