@@ -51,7 +51,7 @@ internal object GtDialogueQuality {
         s=s.replace(Regex("""(?i)(:\s*)1(?=\s*,\s*(?:uh|um)\b)""")) {
             it.groupValues[1]+"I"
         }
-        s=s.replace(Regex("""(?i)\b-[TI](?=\s+forgot\b)"""),"I")
+        s=s.replace(Regex("""(?i)-[TI](?=\s+forgot\b)"""),"I")
         s=s.replace(Regex("""(?i)\b(?:I1|1I)(?=\s+will\b)"""),"I")
         s=s.replace(Regex("""(?i)\bTm-(?=I'm\b)"""),"")
         s=s.replace(Regex("""(?i)\bYouire\b"""),"You're")
@@ -146,7 +146,7 @@ class GtDialogueQuality48Test {
         assertEquals("Hızlıca terlemeden gel.",GtDialogueQuality.polish(
             "Run without sweat!","Hızlıca terlemeden gel."))
         assertEquals("Elinde olduklarını biliyorum.",GtDialogueQuality.polish(
-            "I know you got 'em","Onları aldığını biliyorum.").removeSuffix("."))
+            "I know you got 'em","Onları aldığını biliyorum."))
     }
     @Test fun noTokenCostAndSpeakerTagPreserved()= runBlocking {
         var calls=0
