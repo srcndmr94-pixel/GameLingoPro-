@@ -186,7 +186,11 @@ old='''        val labels=ArrayList<Overlay.Label>()
             }'''
 new='''        val labels=ArrayList<Overlay.Label>()
         var newCalls=0
-        for(card in cards){
+        val orderedCards=if(fullMenuDetected)
+            cards.sortedByDescending { (it.zone=="menu-right" || it.zone=="menu-panel") &&
+                it.left > smallWidthForHud(full.width)*.45f }
+        else cards
+        for(card in orderedCards){
             val source = GtNativeEngine.normalize(card.text)
             if(source.isBlank() || isOurOwnText(source) ||
                 GtMenuUi.keepAsGameName(source)) continue
@@ -195,7 +199,7 @@ new='''        val labels=ArrayList<Overlay.Label>()
             if(translated==null) {
                 // Translate busy game menus incrementally to avoid 20+ network
                 // requests blocking the screen, while preserving cached labels.
-                if(fullMenuDetected && newCalls>=5)continue
+                if(fullMenuDetected && newCalls>=8)continue
                 newCalls++
                 translated=if(fullMenuDetected)
                     GtMenuUi.localized(source) ?: translateMenuText(source)?.trim()
