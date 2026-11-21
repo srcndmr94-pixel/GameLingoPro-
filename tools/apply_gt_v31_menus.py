@@ -46,7 +46,7 @@ internal object GtMenuUi {
         "medium" to "Orta", "high" to "Yüksek"
     )
     private fun bare(s:String):String=norm(s)
-        .replace(Regex("""(?:\s+[lLrR][1-3]|\s+[○◯●✕□△])+$"""),"")
+        .replace(Regex("""(?:\s+[lLrR][1-3]|\s+[xXoO]|\s+[○◯●✕□△])+$"""),"")
         .trim()
     fun isGameMenu(lines:List<GtAllHud.Line>):Boolean {
         val labels=lines.map{bare(it.text)}.toSet()
