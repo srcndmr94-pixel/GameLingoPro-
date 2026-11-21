@@ -189,8 +189,7 @@ replace_once(service,'''    private var gtHudMissingScans=0''',
 '''    private var gtHudMissingScans=0
     private var gtUncoveredScan=false''')
 replace_once(service,
-'''                    val captureStart = android.os.SystemClock.elapsedRealtime()
-                    val full = grabFull()''',
+'''                    val full = grabFull()''',
 '''                    val uncoverSource = !isTv && cycle % 2L == 0L &&
                         (shownSource.isNotBlank() || lastHudLabels.isNotEmpty())
                     if(uncoverSource) {
@@ -199,14 +198,14 @@ replace_once(service,
                         delay(55L)
                     }
                     gtUncoveredScan=uncoverSource
-                    val captureStart = android.os.SystemClock.elapsedRealtime()
                     val full = grabFull()''')
 replace_once(service,
 '''                    if (full == null) {
                         diagNoFrame++''',
 '''                    if (full == null) {
                         gtUncoveredScan=false
-                        if(uncoverSource && shownValue.isNotBlank())showSubtitle(shownValue)
+                        if(uncoverSource && shownSource.isNotBlank() && shownValue.isNotBlank())
+                            overlay.setSubtitle(shownValue, subtitleAnchorPx)
                         if(uncoverSource && lastHudLabels.isNotEmpty())
                             overlay.setLabels(lastHudLabels)
                         diagNoFrame++''')
@@ -218,16 +217,16 @@ replace_once(service,
                         processSubtitle(full)
                     } finally {
                         gtUncoveredScan=false
-                        if(uncoverSource && shownValue.isNotBlank())showSubtitle(shownValue)
+                        if(uncoverSource && shownSource.isNotBlank() && shownValue.isNotBlank())
+                            overlay.setSubtitle(shownValue, subtitleAnchorPx)
                         if(uncoverSource && lastHudLabels.isNotEmpty())
                             overlay.setLabels(lastHudLabels)
                     }
 
                     if (!isTv''')
 replace_once(service,
-'''        if (!subtitleReadGuard299.shouldOcr(sampleUnchanged, candidateSeen == 1, checkMs)) {''',
-'''        if (!gtUncoveredScan &&
-            !subtitleReadGuard299.shouldOcr(sampleUnchanged, candidateSeen == 1, checkMs)) {''')
+'''        if (bandDegismedi(band)) {''',
+'''        if (!gtUncoveredScan && bandDegismedi(band)) {''')
 replace_once(service,
 '''            if (emptyFrames >= 6 && shownSource.isNotEmpty() && yeterinceDurdu) {''',
 '''            if (gtUncoveredScan && emptyFrames >= 2 && shownSource.isNotEmpty()) {''')
