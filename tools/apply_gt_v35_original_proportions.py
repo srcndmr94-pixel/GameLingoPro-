@@ -116,11 +116,19 @@ replace_once(service,
                             }
                         }''',
 '''                        if (shownSource.isNotEmpty() && lastFrameMs > 0 && nowMs - lastFrameMs > STALE_MS) {
-                            // No new frame is NOT evidence that English left.
-                            // Keep the last readable line; recover capture as before.
+                            // Stop covering the game when source is unavailable.
+                            shownSource=""
+                            translatingFor=""
+                            candidate=""
+                            candidateSeen=0
+                            subtitleGeneration.invalidate()
+                            showSubtitle(null)
+                            gtHeldLabels.clear()
+                            lastHudLabels=emptyList()
+                            overlay.clearLabels()
                             if (!staleWarned) {
                                 staleWarned = true
-                                log("GÖRÜNTÜ GELMİYOR: ${STALE_MS / 1000} sn; son çeviri korundu.")
+                                log("GÖRÜNTÜ GELMİYOR: eski çeviri temizlendi.")
                             }
                         }''')
 
