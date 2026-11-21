@@ -1,0 +1,85 @@
+name: GameLingoPro Native GT Engine and Subtitle Style
+on:
+  push:
+    branches: [feature/native-gametranslator-core]
+    paths:
+      - '.github/workflows/gt-native-27.yml'
+      - 'tools/apply_gt_v27_engine.py'
+      - 'tools/apply_gt_v27_subtitle_style.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract original GameLingoPro Kotlin sources
+        run: |
+          python3 - <<'PY'
+          from zipfile import ZipFile
+          from pathlib import PurePosixPath
+          with ZipFile('GameLingoPro-webOS-baglanti-onarimi.zip') as z:
+              for item in z.namelist():
+                  p=PurePosixPath(item)
+                  if p.is_absolute() or '..' in p.parts:raise SystemExit('Unsafe ZIP')
+              z.extractall('.')
+          PY
+          test -f app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
+      - name: Preserve original GameLingoPro UI and spatial HUD
+        run: |
+          python3 tools/apply_pro_brand.py
+          python3 tools/apply_pro_button_sounds.py
+          python3 tools/apply_pro_intro.py
+          python3 tools/apply_pro_settings_map.py
+          python3 tools/apply_native_gamelingopro_webos_hud.py .
+          python3 tools/apply_native_pro_translation_quality.py .
+          python3 tools/apply_pro_hud_cards_fix.py .
+          python3 tools/apply_pro_subtitle_flow_23.py .
+          python3 tools/apply_pro_long_subtitle_24.py .
+      - name: Preserve 2.5 and 2.6 OCR improvements
+        run: |
+          mkdir -p /tmp/glp25
+          python3 -m zipfile -e tools/GameLingoPro-2.5-Source-Patch.zip /tmp/glp25
+          python3 /tmp/glp25/apply_gamelingopro_25_stable_ocr.py .
+          mkdir -p app/src/test/java/com/example/altyazi
+          cp /tmp/glp25/ProSubtitleAssembler25Test.kt app/src/test/java/com/example/altyazi/
+          python3 tools/apply_pro_ocr_reliability_26.py .
+      - name: Retrieve GameTranslator 1.8.49 Android sources
+        run: git clone --quiet --depth 1 --branch v1.8.49 https://gitlab.com/sefflex/GameTranslator.git /tmp/GameTranslator
+      - name: Replace active translation chain with GameTranslator
+        run: python3 tools/apply_gt_v27_engine.py . /tmp/GameTranslator
+      - name: Apply GameTranslator subtitle appearance
+        run: python3 tools/apply_gt_v27_subtitle_style.py .
+      - name: Verify original identity and new caption style
+        run: |
+          grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
+          grep -q 'GameLingoPro-2.7-GT-Core' app/build.gradle.kts
+          grep -q 'GtNativeEngine.translate(source,fast)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'Color.argb(198, 0, 0, 0)' app/src/main/java/com/example/altyazi/Overlay.kt
+          grep -q 't.maxLines = Int.MAX_VALUE' app/src/main/java/com/example/altyazi/Overlay.kt
+          test -f app/src/main/assets/GameTranslator-LICENSE.txt
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Run OCR and GameTranslator engine unit tests
+        run: gradle :app:testDebugUnitTest --no-daemon --stacktrace
+      - name: Compile original native GameLingoPro APK
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+      - name: Verify APK identity and signature
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          signer="$(find "$ANDROID_HOME/build-tools" -name apksigner -print -quit)"
+          test -n "$signer"
+          "$signer" verify app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameLingoPro-2.7-GT-Engine-Caption
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
