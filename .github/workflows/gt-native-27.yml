@@ -239,7 +239,7 @@ jobs:
         run: python3 tools/apply_gt_v47_restore_all_colors.py .
       - name: Verify all caption, notice, map and HUD translation remains enabled
         run: |
-          grep -q 'GameLingoPro-4.8-DialogueQuality' app/build.gradle.kts
+          grep -q 'GameLingoPro-4.7-AllTranslations-Colored' app/build.gradle.kts
           grep -q 'processGameNotice(full,noticeProbe)' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'processSubtitle(full)' app/src/main/java/com/example/altyazi/CaptureService.kt
           ! grep -q 'gtQuestBoxesOnly' app/src/main/java/com/example/altyazi/CaptureService.kt
