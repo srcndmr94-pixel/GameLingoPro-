@@ -43,7 +43,7 @@ internal object GtAllHud {
         if(y<.065f||y>.985f)return null
         // The middle of the bottom strip belongs to the separate speech subtitle OCR.
         // BUT the left and right lower corners contain mission/inventory notifications.
-        if(x in .40f.. .60f && y>=subtitleTop)return null
+        if(x>=0.40f && x<=0.60f && y>=subtitleTop)return null
         return when {
             x<=.44f && y>=.69f -> "left-bottom"
             x<=.44f -> "left-top"
@@ -207,6 +207,7 @@ block='''    private val gtMultiHudPreferenceMigration: Boolean = run {
     }
 
 '''
+cap.write_text(t,encoding="utf-8")
 p=p.replace(needle,block+needle,1)
 prefs.write_text(p,encoding="utf-8")
 # Make the native GT HUD labels use the same rounded glass style, without
