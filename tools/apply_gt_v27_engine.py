@@ -32,7 +32,7 @@ import kotlinx.coroutines.withContext
 
 internal object GtNativeEngine {
     private val google=GoogleGtxTranslator("en","tr")
-    private val offline=MlKitTranslator("en","tr")
+    private val offline by lazy { MlKitTranslator("en","tr") }
     @Volatile private var prepared=false
     private val speaker=Regex("""^(?:\[[\p{L} .'-]{2,30}\]|[\p{Lu}][\p{L} .'-]{1,29}:)\s*""")
     fun normalize(raw:String):String {
