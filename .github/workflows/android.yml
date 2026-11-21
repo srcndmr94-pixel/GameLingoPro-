@@ -84,7 +84,7 @@ jobs:
         run: |
           grep -q 'GAMELINGO PRO  •  BAĞLANTI MERKEZİ' app/src/main/res/layout/activity_main.xml
           grep -q 'android:text="GameLingo"' app/src/main/res/layout/activity_main.xml
-          grep -q 'versionName = "GameLingoPro-1.0"' app/build.gradle.kts
+          grep -q 'versionName = "GameLingoPro-2.0-HUD"' app/build.gradle.kts
           test -f app/src/main/res/drawable/pro_neon_panel.xml
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
