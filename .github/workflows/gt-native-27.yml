@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [feature/gt-source-geometry-34]
+    branches: [feature/gt-original-proportions-hold-35]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -15,6 +15,7 @@ on:
       - 'tools/apply_gt_v32_auto_region_settings.py'
       - 'tools/apply_gt_v33_fixed_hud_font.py'
       - 'tools/apply_gt_v34_source_geometry.py'
+      - 'tools/apply_gt_v35_original_proportions.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -167,6 +168,15 @@ jobs:
           grep -q 'GtObjectiveLine.matches' app/src/main/java/com/example/altyazi/CaptureService.kt
           ! grep -q 'overlay = Overlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtOriginalBoundsTest.kt
+      - name: Fit source-size HUD labels and hold captions across temporary OCR misses
+        run: python3 tools/apply_gt_v35_original_proportions.py .
+      - name: Verify GT original-sized persistent translation
+        run: |
+          grep -q 'GameLingoPro-3.5-GT-OriginalSize-Hold' app/build.gradle.kts
+          grep -q 'source.coerceAtLeast(1)+padding.coerceAtLeast(0)' app/src/main/java/com/example/altyazi/GtSourceBox.kt
+          grep -q 'if (text.isEmpty() && shownSource.isNotBlank()) return' app/src/main/java/com/example/altyazi/CaptureService.kt
+          ! grep -q 'gtHeldLabels.removeAll{held->hudNow-held.lastSeenMs>120000L}' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'fontPx\*.42f' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
@@ -178,7 +188,7 @@ jobs:
           cp app/src/main/java/com/example/altyazi/Overlay.kt dist/source/
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-V33-Source-Inspection
+          name: GameLingoPro-V35-Source-Inspection
           path: dist/source
           if-no-files-found: error
       - uses: actions/setup-java@v5
@@ -200,6 +210,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-3.4-GT-OriginalBounds-Persistent
+          name: GameLingoPro-3.5-GT-OriginalSize-Persistent
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
