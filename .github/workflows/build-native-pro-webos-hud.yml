@@ -8,6 +8,8 @@ on:
       - 'tools/apply_native_pro_translation_quality.py'
       - 'tools/apply_pro_hud_cards_fix.py'
       - 'tools/apply_pro_subtitle_flow_23.py'
+      - 'tools/apply_pro_long_subtitle_24.py'
+      - 'tools/ProSubtitleAssembler.kt'
       - 'tools/ProHudCards.kt'
   workflow_dispatch:
 permissions:
@@ -52,12 +54,21 @@ jobs:
         run: python3 tools/apply_pro_hud_cards_fix.py .
       - name: Fix continued subtitle OCR and compact phone layout
         run: python3 tools/apply_pro_subtitle_flow_23.py .
+      - name: Fix long source captions and remove output clipping
+        run: python3 tools/apply_pro_long_subtitle_24.py .
+      - name: Verify full-subtitle OCR patch and original GameLingoPro ID
+        run: |
+          grep -q 'ProSubtitleAssembler.fuller' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'candidateStartedAtMs' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 't.maxLines = Int.MAX_VALUE' app/src/main/java/com/example/altyazi/Overlay.kt
+          grep -q 'versionCode = 20261125' app/build.gradle.kts
+          grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
       - name: Verify repaired OCR continuation and translation quality
         run: |
           grep -q 'meaningfulExpansion' app/src/main/java/com/example/altyazi/ProTranscriptGuard.kt
           grep -q 'gapFactor' app/src/main/java/com/example/altyazi/OfflineFix.kt
           grep -q 'serve as a medium' app/src/main/java/com/example/altyazi/TranslationQualityGate.kt
-          grep -q 'versionCode = 20261124' app/build.gradle.kts
+          grep -q 'versionCode = 20261125' app/build.gradle.kts
       - name: Verify grouped HUD cards and original Android app
         run: |
           grep -q 'ProHudCards.group' app/src/main/java/com/example/altyazi/CaptureService.kt
@@ -70,12 +81,12 @@ jobs:
           grep -q 'ProTranscriptGuard.speakersCompatible' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'ProTranscriptGuard.separateObjective' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'ProTranscriptGuard.literalIdiom' app/src/main/java/com/example/altyazi/TranslationQualityGate.kt
-          grep -q 'versionCode = 20261124' app/build.gradle.kts
+          grep -q 'versionCode = 20261125' app/build.gradle.kts
       - name: Verify Pro native identity and spatial translation hooks
         shell: bash
         run: |
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
-          grep -q 'versionCode = 20261124' app/build.gradle.kts
+          grep -q 'versionCode = 20261125' app/build.gradle.kts
           grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'class PhoneBridgeService' app/src/main/java/com/example/altyazi/PhoneBridge.kt
           grep -q 'region' webos/index.html
