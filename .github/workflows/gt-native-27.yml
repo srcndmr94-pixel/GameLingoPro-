@@ -8,6 +8,7 @@ on:
       - 'tools/apply_gt_v27_subtitle_style.py'
       - 'tools/apply_gt_v28_all_hud.py'
       - 'tools/apply_gt_v29_adjustable_style.py'
+      - 'tools/apply_gt_v291_size_fix.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -59,9 +60,17 @@ jobs:
         run: python3 tools/apply_gt_v28_all_hud.py .
       - name: Replace legacy visual overrides with adjustable GT glass renderer
         run: python3 tools/apply_gt_v29_adjustable_style.py .
+      - name: Ensure requested 28sp is not overridden in rendering
+        run: python3 tools/apply_gt_v291_size_fix.py .
+      - name: Verify full size and chosen color are used in actual caption
+        run: |
+          grep -q 'stil.boyutSp.coerceIn(12f, 60f)' app/src/main/java/com/example/altyazi/Overlay.kt
+          ! grep -q 'val gtSize' app/src/main/java/com/example/altyazi/Overlay.kt
+          grep -q 'GameLingoPro-2.9.1-GT-SizeFix' app/build.gradle.kts
+          test -f app/src/test/java/com/example/altyazi/GtRenderedSizeTest.kt
       - name: Verify selected subtitle settings control all rendered areas
         run: |
-          grep -q 'GameLingoPro-2.9-GT-Adjustable' app/build.gradle.kts
+          grep -q 'GameLingoPro-2.9.1-GT-SizeFix' app/build.gradle.kts
           grep -q 't.setTextColor(stil.yaziRengi)' app/src/main/java/com/example/altyazi/Overlay.kt
           grep -q 'lastGTStyle' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtActualAppearanceTest.kt
@@ -69,13 +78,13 @@ jobs:
         run: |
           grep -q 'GtAllHud.group' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'gtMultiHudV28Configured' app/src/main/java/com/example/altyazi/Prefs.kt
-          grep -q 'GameLingoPro-2.9-GT-Adjustable' app/build.gradle.kts
+          grep -q 'GameLingoPro-2.9.1-GT-SizeFix' app/build.gradle.kts
           grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtAllHudTest.kt
       - name: Verify original identity and new caption style
         run: |
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
-          grep -q 'GameLingoPro-2.9-GT-Adjustable' app/build.gradle.kts
+          grep -q 'GameLingoPro-2.9.1-GT-SizeFix' app/build.gradle.kts
           grep -q 'GtNativeEngine.translate(source, fast)' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'Color.red(stil.arkaRenk)' app/src/main/java/com/example/altyazi/Overlay.kt
           grep -q 't.maxLines = Int.MAX_VALUE' app/src/main/java/com/example/altyazi/Overlay.kt
@@ -99,6 +108,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-2.9-GT-AllHUD-Adjustable
+          name: GameLingoPro-2.9.1-GT-SizeFix
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
