@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [fix/visible-only-stable-39]
+    branches: [fix/menu-first-visible-40]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -15,12 +15,14 @@ on:
       - 'tools/apply_gt_v32_auto_region_settings.py'
       - 'tools/apply_gt_v33_fixed_hud_font.py'
       - 'tools/apply_gt_v34_source_geometry.py'
+      - 'tools/apply_gt_v40_menu_first.py'
   pull_request:
     branches: [main]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v31_menus.py'
       - 'tools/apply_gt_v34_source_geometry.py'
+      - 'tools/apply_gt_v40_menu_first.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -173,18 +175,28 @@ jobs:
           grep -q 'GtObjectiveLine.matches' app/src/main/java/com/example/altyazi/CaptureService.kt
           ! grep -q 'overlay = Overlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtOriginalBoundsTest.kt
+      - name: Prioritize map information panels and render each translation immediately
+        run: python3 tools/apply_gt_v40_menu_first.py .
+      - name: Verify incremental menu renderer is active
+        run: |
+          grep -q 'GameLingoPro-4.0-GT-FastMenu' app/build.gradle.kts
+          grep -q 'GtMenuPriority.score' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'if(fullMenuDetected && newCalls>=3)continue' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'First translated panel' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtMenuPriorityTest.kt
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
           cp app/src/main/java/com/example/altyazi/GtExactOverlay.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtAllHud.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtMenuUi.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtMenuPriority.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtStyleContract.kt dist/source/
           cp app/src/main/java/com/example/altyazi/CaptureService.kt dist/source/
           cp app/src/main/java/com/example/altyazi/Overlay.kt dist/source/
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-V39-Source-Inspection
+          name: GameLingoPro-V40-Source-Inspection
           path: dist/source
           if-no-files-found: error
       - uses: actions/setup-java@v5
@@ -206,6 +218,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-3.9-GT-OnlyWhileEnglishVisible
+          name: GameLingoPro-4.0-GT-FastMenu
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
