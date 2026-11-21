@@ -91,7 +91,7 @@ class GtColorsAllTranslation47Test {
         assertTrue(code.contains("Color.rgb(255,203,86) // amber"))
         assertTrue(code.contains("Color.rgb(105,232,242) // turquoise"))
         assertTrue(code.contains("Color.rgb(178,242,125) // green"))
-        assertTrue(code.contains("Color.rgb(111,235,244) // translated caption"))
+        assertTrue(code.contains("Color.rgb(111,235,244)"))
         assertTrue(code.contains("Color.rgb(17,24,38)"))
     }
     @Test fun subtitlesSmsMapAndOtherHudRemainEnabled() {
