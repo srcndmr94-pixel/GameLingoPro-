@@ -7,46 +7,41 @@ on:
       - 'GameLingoPro-baslangic-kaynak.zip'
       - '.github/workflows/android.yml'
 permissions:
-  contents: write
+  contents: read
 jobs:
-  import-and-build:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Extract uploaded source archive
+      - name: Extract source ZIP safely
+        shell: bash
         run: |
           python3 - <<'PY'
           import pathlib, zipfile
-          archive = pathlib.Path('GameLingoPro-baslangic-kaynak.zip')
+          archive=pathlib.Path('GameLingoPro-baslangic-kaynak.zip')
+          if not archive.is_file(): raise SystemExit('Missing uploaded source ZIP')
           with zipfile.ZipFile(archive) as z:
-              for info in z.infolist():
-                  target = pathlib.PurePosixPath(info.filename)
-                  if target.is_absolute() or '..' in target.parts or info.filename.startswith('.git/'):
-                      raise ValueError('Unsafe archive path: ' + info.filename)
+              for item in z.infolist():
+                  p=pathlib.PurePosixPath(item.filename)
+                  if p.is_absolute() or '..' in p.parts:
+                      raise SystemExit('Unsafe path in ZIP: '+item.filename)
               z.extractall('.')
           PY
           test -f settings.gradle.kts
           test -f app/build.gradle.kts
-      - name: Commit extracted Android sources
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- ':!GameLingoPro-baslangic-kaynak.zip'
-          if ! git diff --cached --quiet; then
-            git commit -m "Import GameLingo Pro Android sources from uploaded ZIP"
-            git push
-          fi
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
+      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
       - name: Build debug APK
-        run: gradle :app:assembleDebug --stacktrace
+        run: gradle :app:assembleDebug --stacktrace --no-daemon
       - uses: actions/upload-artifact@v4
         if: success()
         with:
           name: GameLingoPro-debug
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
