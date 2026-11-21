@@ -13,10 +13,14 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build APK
+        with:
+          gradle-version: '8.13'
+      - name: Verify Android project files
         run: |
-          chmod +x ./gradlew
-          ./gradlew :app:assembleDebug
+          test -f settings.gradle.kts || { echo "Missing Android source: settings.gradle.kts"; exit 1; }
+          test -f app/build.gradle.kts || { echo "Missing Android source: app/build.gradle.kts"; exit 1; }
+      - name: Build debug APK
+        run: gradle :app:assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
         if: success()
         with:
