@@ -9,6 +9,7 @@ on:
       - 'tools/apply_pro_hud_cards_fix.py'
       - 'tools/apply_pro_subtitle_flow_23.py'
       - 'tools/apply_pro_long_subtitle_24.py'
+      - 'tools/GameLingoPro-2.5-Source-Patch.zip'
       - 'tools/ProSubtitleAssembler.kt'
       - 'tools/ProHudCards.kt'
   workflow_dispatch:
@@ -56,19 +57,40 @@ jobs:
         run: python3 tools/apply_pro_subtitle_flow_23.py .
       - name: Fix long source captions and remove output clipping
         run: python3 tools/apply_pro_long_subtitle_24.py .
+      - name: Apply GameLingoPro 2.5 OCR stabilization and unit tests
+        shell: bash
+        run: |
+          mkdir -p /tmp/glp25
+          python3 -m zipfile -e tools/GameLingoPro-2.5-Source-Patch.zip /tmp/glp25
+          python3 /tmp/glp25/apply_gamelingopro_25_stable_ocr.py .
+          mkdir -p app/src/test/java/com/example/altyazi
+          cp /tmp/glp25/ProSubtitleAssembler25Test.kt app/src/test/java/com/example/altyazi/
+          python3 - <<'PY'
+          from pathlib import Path
+          build=Path("app/build.gradle.kts")
+          s=build.read_text(encoding="utf-8")
+          assert 'applicationId = "com.gamelingo.pro"' in s
+          assert 'dependencies {' in s
+          if 'testImplementation("junit:junit:4.13.2")' not in s:
+              s=s.replace('dependencies {', 'dependencies {\n    testImplementation("junit:junit:4.13.2")', 1)
+          build.write_text(s,encoding="utf-8")
+          PY
+          test -f app/src/test/java/com/example/altyazi/ProSubtitleAssembler25Test.kt
+          grep -q 'expanded.recycle()' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'versionCode = 20261126' app/build.gradle.kts
       - name: Verify full-subtitle OCR patch and original GameLingoPro ID
         run: |
           grep -q 'ProSubtitleAssembler.fuller' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'candidateStartedAtMs' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 't.maxLines = Int.MAX_VALUE' app/src/main/java/com/example/altyazi/Overlay.kt
-          grep -q 'versionCode = 20261125' app/build.gradle.kts
+          grep -q 'versionCode = 20261126' app/build.gradle.kts
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
       - name: Verify repaired OCR continuation and translation quality
         run: |
           grep -q 'meaningfulExpansion' app/src/main/java/com/example/altyazi/ProTranscriptGuard.kt
           grep -q 'gapFactor' app/src/main/java/com/example/altyazi/OfflineFix.kt
           grep -q 'serve as a medium' app/src/main/java/com/example/altyazi/TranslationQualityGate.kt
-          grep -q 'versionCode = 20261125' app/build.gradle.kts
+          grep -q 'versionCode = 20261126' app/build.gradle.kts
       - name: Verify grouped HUD cards and original Android app
         run: |
           grep -q 'ProHudCards.group' app/src/main/java/com/example/altyazi/CaptureService.kt
@@ -81,12 +103,12 @@ jobs:
           grep -q 'ProTranscriptGuard.speakersCompatible' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'ProTranscriptGuard.separateObjective' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'ProTranscriptGuard.literalIdiom' app/src/main/java/com/example/altyazi/TranslationQualityGate.kt
-          grep -q 'versionCode = 20261125' app/build.gradle.kts
+          grep -q 'versionCode = 20261126' app/build.gradle.kts
       - name: Verify Pro native identity and spatial translation hooks
         shell: bash
         run: |
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
-          grep -q 'versionCode = 20261125' app/build.gradle.kts
+          grep -q 'versionCode = 20261126' app/build.gradle.kts
           grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'class PhoneBridgeService' app/src/main/java/com/example/altyazi/PhoneBridge.kt
           grep -q 'region' webos/index.html
@@ -107,7 +129,7 @@ jobs:
         with:
           gradle-version: '8.13'
       - name: Compile GameLingoPro Android debug APK
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+        run: gradle :app:testDebugUnitTest :app:assembleDebug --no-daemon --stacktrace
       - name: Verify signed APK and package identity
         shell: bash
         run: |
