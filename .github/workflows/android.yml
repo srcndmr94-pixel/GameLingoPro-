@@ -6,6 +6,7 @@ on:
     paths:
       - 'GameLingoPro-*.zip'
       - '.github/workflows/android.yml'
+      - 'tools/**'
 permissions:
   contents: read
 jobs:
@@ -31,8 +32,9 @@ jobs:
           PY
           test -f settings.gradle.kts
           test -f app/build.gradle.kts
-          test -f app/debug.keystore
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
+      - name: Apply GameLingo Pro interface changes
+        run: python3 tools/apply_pro_brand.py
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
