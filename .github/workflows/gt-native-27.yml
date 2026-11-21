@@ -74,6 +74,35 @@ jobs:
           Path('/tmp/apply_gt_exact_renderer_v30.py').write_bytes(decoded)
           PY
           python3 /tmp/apply_gt_exact_renderer_v30.py .
+          # Correct the generated test source so Kotlin quotes are unambiguous.
+          python3 - <<'PY'
+          from pathlib import Path
+          t=Path('app/src/test/java/com/example/altyazi/GtExactOverlayTest.kt')
+          assert t.is_file()
+          t.write_text('''package com.example.altyazi
+import org.junit.Assert.*
+import org.junit.Test
+class GtExactOverlayTest {
+  @Test fun legacyOverlayIsNotInstantiated() {
+    val capture=java.io.File("src/main/java/com/example/altyazi/CaptureService.kt").readText()
+    assertTrue(capture.contains("overlay = GtExactOverlay(this)"))
+    assertFalse(capture.contains("overlay = Overlay(this)"))
+  }
+  @Test fun gameTranslatorSubtitleAndHudAreDifferent() {
+    val renderer=java.io.File("src/main/java/com/example/altyazi/GtExactOverlay.kt").readText()
+    assertTrue(renderer.contains("shape(184,10)"))
+    assertTrue(renderer.contains("shape(247,6)"))
+    assertTrue(renderer.contains("SpannableString"))
+  }
+  @Test fun oldYellowAndGiantTextAreReset() {
+    val prefs=java.io.File("src/main/java/com/example/altyazi/Prefs.kt").readText()
+    assertTrue(prefs.contains("gtExactRendererV30Reset"))
+    assertTrue(prefs.contains("COLOR_WHITE"))
+    assertTrue(prefs.contains("subtitleSize"))
+  }
+}
+''',encoding='utf-8')
+          PY
       - name: Verify GT-only renderer, original package and independent HUD
         run: |
           grep -q 'overlay = GtExactOverlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
