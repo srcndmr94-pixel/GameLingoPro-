@@ -1,10 +1,11 @@
 name: GameLingoPro - Original Android + webOS HUD
 on:
   push:
-    branches: [feature/native-app-webos-hud]
+    branches: [main, feature/native-app-webos-hud]
     paths:
       - '.github/workflows/build-native-pro-webos-hud.yml'
       - 'tools/apply_native_gamelingopro_webos_hud.py'
+      - 'tools/apply_native_pro_translation_quality.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -42,11 +43,20 @@ jobs:
         run: python3 tools/apply_pro_settings_map.py
       - name: Integrate original GameLingoPro OCR with mobile to LG HUD bridge
         run: python3 tools/apply_native_gamelingopro_webos_hud.py .
+      - name: Repair original GameLingoPro OCR and natural-language quality
+        run: python3 tools/apply_native_pro_translation_quality.py .
+      - name: Verify source-aware dialogue and idiom guards
+        shell: bash
+        run: |
+          grep -q 'ProTranscriptGuard.speakersCompatible' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'ProTranscriptGuard.separateObjective' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'ProTranscriptGuard.literalIdiom' app/src/main/java/com/example/altyazi/TranslationQualityGate.kt
+          grep -q 'versionCode = 20261122' app/build.gradle.kts
       - name: Verify Pro native identity and spatial translation hooks
         shell: bash
         run: |
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
-          grep -q 'versionCode = 20261121' app/build.gradle.kts
+          grep -q 'versionCode = 20261122' app/build.gradle.kts
           grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'class PhoneBridgeService' app/src/main/java/com/example/altyazi/PhoneBridge.kt
           grep -q 'region' webos/index.html
@@ -91,11 +101,11 @@ jobs:
           ar q ../GameLingoPro-webOS-HUD-1.1.0.ipk debian-binary control.tar.gz data.tar.gz
           ar t ../GameLingoPro-webOS-HUD-1.1.0.ipk
           cd ../..
-          cp app/build/outputs/apk/debug/app-debug.apk dist/GameLingoPro-Android-HUD-debug.apk
+          cp app/build/outputs/apk/debug/app-debug.apk dist/GameLingoPro-Android-OCR21-debug.apk
       - name: Upload native GameLingoPro APK and webOS IPK
         uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-Original-App-HUD
+          name: GameLingoPro-Original-App-OCR21
           path: |
             dist/GameLingoPro-Android-HUD-debug.apk
             dist/GameLingoPro-webOS-HUD-1.1.0.ipk
