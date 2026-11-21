@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [fix/panel-selection-clear-42]
+    branches: [fix/ingame-notice-43]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -18,6 +18,7 @@ on:
       - 'tools/apply_gt_v40_menu_first.py'
       - 'tools/apply_gt_v41_selected_panels.py'
       - 'tools/apply_gt_v42_panel_selection_clear.py'
+      - 'tools/apply_gt_v43_game_notices.py'
   pull_request:
     branches: [main]
     paths:
@@ -27,6 +28,7 @@ on:
       - 'tools/apply_gt_v40_menu_first.py'
       - 'tools/apply_gt_v41_selected_panels.py'
       - 'tools/apply_gt_v42_panel_selection_clear.py'
+      - 'tools/apply_gt_v43_game_notices.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -204,6 +206,15 @@ jobs:
           grep -q 'gtPanelTranslatedTitle' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'gtLabelGeneration' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
           test -f app/src/test/java/com/example/altyazi/GtMapSelection42Test.kt
+      - name: Detect and translate game messages and tutorial notifications
+        run: python3 tools/apply_gt_v43_game_notices.py .
+      - name: Verify in-game notifications use in-place source bounds
+        run: |
+          grep -q 'GameLingoPro-4.3-AutoGameNotices' app/build.gradle.kts
+          grep -q 'processGameNotice(full,noticeProbe)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'if(card.gameNotice)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          test -f app/src/test/java/com/example/altyazi/GtGameNoticeTest.kt
+          test -f app/src/main/java/com/example/altyazi/GtGameNotice.kt
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
@@ -212,12 +223,13 @@ jobs:
           cp app/src/main/java/com/example/altyazi/GtMenuUi.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtMenuPriority.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtSelectedMapPanel.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtGameNotice.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtStyleContract.kt dist/source/
           cp app/src/main/java/com/example/altyazi/CaptureService.kt dist/source/
           cp app/src/main/java/com/example/altyazi/Overlay.kt dist/source/
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-V42-Source-Inspection
+          name: GameLingoPro-V43-Source-Inspection
           path: dist/source
           if-no-files-found: error
       - uses: actions/setup-java@v5
@@ -239,6 +251,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-4.2-GT-ClearOnSelection
+          name: GameLingoPro-4.3-GT-AutoGameNotices
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
