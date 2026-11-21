@@ -79,12 +79,23 @@ patch(cap,"        val f = FastTranslate()\n        fast = f",'''        prefs.o
         fast = f''')
 patch(cap,"        store = TranslationStore(this)\n        storeAi = TranslationStore(this, TranslationStore.AI)",'''        store=TranslationStore(this,"gt_native_v1849")
         storeAi=TranslationStore(this,"gt_native_v1849_ai")''')
-patch(cap,"    private suspend fun runTranslation(source: String, runId: Long) {",'''    private suspend fun runTranslation(source: String, runId: Long) {
-        val result=GtNativeEngine.translate(source,fast)
-        if(result!=null)publishForRun(runId,source,result,remember=false,tag=" · GT/GTX")
-        else log("GT: ceviri uretilemedi")
-        return
-''')
+# Remove the old translation body completely: unreachable legacy smart-casts
+# fail Kotlin 2.x compilation and would keep unused engines in executable code.
+source=cap.read_text(encoding="utf8")
+first=source.index("    private suspend fun runTranslation(source: String, runId: Long) {")
+after=source.index("    private suspend fun processMenu(full: Bitmap) {",first)
+replacement='''    private suspend fun runTranslation(source: String, runId: Long) {
+        val result = GtNativeEngine.translate(source, fast)
+        if (result != null) {
+            publishForRun(runId, source, result, remember = false, tag = " · GT/GTX")
+        } else {
+            log("GT: çeviri üretilemedi")
+        }
+    }
+
+    // Side mission / inventory labels retain their existing GameLingoPro path.
+    '''
+cap.write_text(source[:first]+replacement+source[after:],encoding="utf8")
 patch(cap,"    private suspend fun translateMenuText(text: String): String? {",'''    private suspend fun translateMenuText(text: String): String? {
         return GtNativeEngine.translate(text,fast)
 ''')
