@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""GameLingoPro GT-only: replace outdated manual screen-area UI with automatic zones.
-Keep legacy views mounted (hidden) so MainActivity bindings and existing settings
-remain compatible; native runtime uses GtAllHud, GtMenuUi, GtExactOverlay.
+"""Replace old manual ROI controls with GT automatic-region information.
+Keep hidden compatibility views so all existing MainActivity bindings survive.
 """
 from pathlib import Path
 import re,sys
@@ -12,67 +11,79 @@ res=root/"app/src/main/res/layout/activity_main.xml"
 main=root/"app/src/main/java/com/example/altyazi/MainActivity.kt"
 cap=root/"app/src/main/java/com/example/altyazi/CaptureService.kt"
 build=root/"app/build.gradle.kts"
-if not all(f.exists() for f in (res,main,cap,build)):
-    raise RuntimeError("Original GameLingoPro source missing")
+for file in (res,main,cap,build):
+    if not file.is_file():raise RuntimeError("Missing original GameLingoPro file "+str(file))
 if 'applicationId = "com.gamelingo.pro"' not in build.read_text():
-    raise RuntimeError("Not original GameLingoPro")
+    raise RuntimeError("Wrong application")
 c=cap.read_text()
-if "overlay = GtExactOverlay(this)" not in c:
-    raise RuntimeError("GT-only renderer is not active")
-if "GtMenuUi.group" not in c or "GtAllHud.group" not in c:
-    raise RuntimeError("GT automatic HUD/menu scan is not enabled")
-s=res.read_text(encoding="utf-8")
-first="        <!-- ======================= ALTYAZI BÖLGESİ ======================= -->"
-last="        <!-- ======================= ALTYAZI GÖRÜNÜMÜ ======================= -->"
-a=s.find(first); b=s.find(last,a+len(first))
-if a<0 or b<0:raise RuntimeError("Screen-area XML section missing")
-section=s[a:b]
-needle='''                <TextView
-                    android:id="@+id/tvRegion"'''
-if section.count(needle)!=1:
-    raise RuntimeError("Region settings anchor changed")
-replacement='''                <TextView
-                    style="@style/LingoHint"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Otomatik GameTranslator taraması: konuşma altyazısı, sol görev ve ipuçları, sağ bildirimler, alt köşe mesajları ve oyun menüleri. Alan seçmen gerekmez." />
+for marker in ("overlay = GtExactOverlay(this)","GtMenuUi.group","GtAllHud.group"):
+    if marker not in c:raise RuntimeError("GT-only renderer or auto area scan not enabled: "+marker)
 
-                <!-- Compatibility-only bindings; no longer exposed to users. -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
+ns="{http://schemas.android.com/apk/res/android}"
+ET.register_namespace("android","http://schemas.android.com/apk/res/android")
+ET.register_namespace("app","http://schemas.android.com/apk/res-auto")
+tree=ET.parse(res)
+document=tree.getroot()
+def view(id):
+    items=[node for node in document.iter() if node.get(ns+"id")==id]
+    if len(items)!=1:raise RuntimeError("Expected one Android view: "+id)
+    return items[0]
 
-'''
-section=section.replace(needle,replacement+needle,1)
-end='''            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>'''
-if section.count(end)!=1:raise RuntimeError("Region card end changed")
-section=section.replace(end,'''                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>''',1)
-section=section.replace('android:text="Nereye bakılsın"',
-                        'android:text="GAMETRANSLATOR ALANLARI"',1)
-section=section.replace('android:text="Altyazı bölgesi"',
-                        'android:text="Otomatik ekran taraması"',1)
-s=s[:a]+section+s[b:]
-s=s.replace('android:text="Ekran alanı"',
-            'android:text="Otomatik OCR alanları"',1)
-s=s.replace('android:text="Altyazı bölgesi ve yan yazı alanı"',
-            'android:text="Altyazı · sol/sağ görev · bildirim · menü"',1)
-ET.fromstring(s)
-for view in ("cbMenu","cbYanSol","cbYanSag","sbTop","sbBottom",
-             "tvRegion","btnRegion","btnMenuAlan","cbSpeaker"):
-    if '@+id/'+view not in section:
-        raise RuntimeError("Settings binding lost: "+view)
-res.write_text(s,encoding="utf-8")
-m=main.read_text(encoding="utf-8")
+section=view("@+id/secRegion")
+container=next((c for c in section if c.tag=="LinearLayout"),None)
+if container is None:raise RuntimeError("Legacy region container missing")
+label=next((node for node in container if node.tag=="TextView" and
+    node.get(ns+"text")=="Nereye bakılsın"),None)
+title=next((node for node in container if node.tag=="TextView" and
+    node.get(ns+"text")=="Altyazı bölgesi"),None)
+if label is None or title is None:raise RuntimeError("Region heading changed")
+label.set(ns+"text","GAMETRANSLATOR ALANLARI")
+title.set(ns+"text","Otomatik ekran taraması")
+
+def add(parent,tag,attributes):
+    element=ET.SubElement(parent,tag)
+    for key,value in attributes.items():
+        element.set(ns+key,value)
+    return element
+
+hidden=ET.Element("LinearLayout")
+hidden.set(ns+"layout_width","match_parent")
+hidden.set(ns+"layout_height","wrap_content")
+hidden.set(ns+"orientation","vertical")
+hidden.set(ns+"visibility","gone")
+for child in list(container):
+    if child is label or child is title:continue
+    container.remove(child)
+    hidden.append(child)
+add(container,"TextView",dict(layout_width="match_parent",
+    layout_height="wrap_content",layout_marginTop="10dp",
+    text="GameTranslator otomatik tarama: alt konuşma altyazısı, sol görev ve ipuçları, sağ bildirimler, köşe mesajları ve oyun menüleri. Ekrandan alan seçmen gerekmez."))
+container.append(hidden)
+
+row=view("@+id/ayarSatir1")
+heading=next((e for e in row.iter() if e.tag=="TextView" and
+    e.get(ns+"text") not in (None,"›")),None)
+if heading is None:raise RuntimeError("Settings section label not found")
+heading.set(ns+"text","Otomatik OCR alanları")
+view("@+id/ayarOzet1").set(ns+"text","Altyazı · sol/sağ görev · bildirim · menü")
+
+# Crucial: legacy setting IDs are preserved for old MainActivity listeners,
+# but their common parent is GONE and no manual ROI controls appear.
+legacy={"@+id/cbMenu","@+id/cbYanSol","@+id/cbYanSag",
+        "@+id/sbTop","@+id/sbBottom","@+id/tvRegion",
+        "@+id/btnRegion","@+id/btnMenuAlan","@+id/cbSpeaker"}
+ids={node.get(ns+"id") for node in hidden.iter()}
+if not legacy.issubset(ids):raise RuntimeError("Legacy binding IDs lost")
+
+ET.indent(tree,space="    ")
+tree.write(res,encoding="utf-8",xml_declaration=True)
+ET.parse(res)
+
+s=main.read_text(encoding="utf-8")
 old='"Ekran alanı", "Yazı ve görünüm"'
-if m.count(old)!=1:raise RuntimeError("Settings navigation title changed")
-main.write_text(m.replace(old,'"Otomatik OCR alanları", "Yazı ve görünüm"',1),
-                encoding="utf-8")
+if s.count(old)!=1:raise RuntimeError("MainActivity settings list changed")
+main.write_text(s.replace(old,'"Otomatik OCR alanları", "Yazı ve görünüm"',1),
+    encoding="utf-8")
 v=build.read_text(encoding="utf-8")
 v,n=re.subn(r'(?m)^(\s*)versionCode\s*=\s*\d+',
             r'\g<1>versionCode = 20261205',v,count=1)
@@ -81,4 +92,4 @@ v,n=re.subn(r'(?m)^(\s*)versionName\s*=\s*"[^"]+"',
             r'\g<1>versionName = "GameLingoPro-3.2-GT-AutoRegions"',v,count=1)
 if n!=1:raise RuntimeError("versionName missing")
 build.write_text(v,encoding="utf-8")
-print("GameLingoPro GT-only: manual region UI hidden, automatic zone view installed")
+print("GameLingoPro 3.2 GT automatic area settings installed; old view IDs retained but hidden")
