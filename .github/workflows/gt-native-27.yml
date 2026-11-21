@@ -1,11 +1,12 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [feature/native-gametranslator-core]
+    branches: [feature/gt-all-screen-hud]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
       - 'tools/apply_gt_v27_subtitle_style.py'
+      - 'tools/apply_gt_v28_all_hud.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -53,10 +54,19 @@ jobs:
         run: python3 tools/apply_gt_v27_engine.py . /tmp/GameTranslator
       - name: Apply GameTranslator subtitle appearance
         run: python3 tools/apply_gt_v27_subtitle_style.py .
+      - name: Enable GameTranslator-style all-screen game HUD
+        run: python3 tools/apply_gt_v28_all_hud.py .
+      - name: Verify all HUD zones, source grouping and Pro identity
+        run: |
+          grep -q 'GtAllHud.group' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'gtMultiHudV28Configured' app/src/main/java/com/example/altyazi/Prefs.kt
+          grep -q 'GameLingoPro-2.8-GT-AllHUD' app/build.gradle.kts
+          grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtAllHudTest.kt
       - name: Verify original identity and new caption style
         run: |
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
-          grep -q 'GameLingoPro-2.7-GT-Core' app/build.gradle.kts
+          grep -q 'GameLingoPro-2.8-GT-AllHUD' app/build.gradle.kts
           grep -q 'GtNativeEngine.translate(source, fast)' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'Color.argb(198, 0, 0, 0)' app/src/main/java/com/example/altyazi/Overlay.kt
           grep -q 't.maxLines = Int.MAX_VALUE' app/src/main/java/com/example/altyazi/Overlay.kt
@@ -80,6 +90,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-2.7-GT-Engine-Caption
+          name: GameLingoPro-2.8-GT-AllScreenHUD
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
