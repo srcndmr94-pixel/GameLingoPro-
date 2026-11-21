@@ -68,7 +68,7 @@ internal object GtSourceBox {
             16f*density.coerceAtLeast(1f))
     }
     fun hold(misses:Int,sinceSeenMs:Long):Boolean =
-        misses<5 || sinceSeenMs<120000L
+        misses<2
     fun nearby(ax:Int,ay:Int,bx:Int,by:Int,screenWidth:Int,screenHeight:Int):Boolean =
         kotlin.math.abs(ax-bx)<= (screenWidth*.025f).toInt().coerceAtLeast(10) &&
         kotlin.math.abs(ay-by)<= (screenHeight*.032f).toInt().coerceAtLeast(12)
@@ -205,10 +205,9 @@ once(cap,
 '''        overlay.setLabels(labels)
         lastHudLabels=labels.toList()
         PhoneBridgeService.publishHud(labels,screenWidth,screenHeight)''',
-'''        // Preserve readable translations through occasional partial/blank
-        // OCR results, but replace a previous card when new source takes over
-        // the same rectangle. Stale cards expire only after 120 seconds.
-        gtHeldLabels.removeAll{held->hudNow-held.lastSeenMs>120000L}
+'''        // Always show only regions detected in the current English OCR frame.
+        // Don't keep old menu labels across changing game screens.
+        gtHeldLabels.clear()
         for(label in labels) {
             val found=gtHeldLabels.indexOfFirst{held->
                 GtSourceBox.nearby(held.value.x,held.value.y,label.x,label.y,
@@ -310,9 +309,9 @@ class GtOriginalBoundsTest {
             GtSourceBox.fontPx(72,3,2f),.001f)
     }
     @Test fun englishIsStillVisibleSoOcrMissKeepsTranslation() {
-        assertTrue(GtSourceBox.hold(3,5500L))
-        assertTrue(GtSourceBox.hold(50,30000L))
-        assertFalse(GtSourceBox.hold(20,121000L))
+        assertTrue(GtSourceBox.hold(1,300L))
+        assertFalse(GtSourceBox.hold(3,5500L))
+        assertFalse(GtSourceBox.hold(50,30000L))
     }
     @Test fun bottomObjectiveBelongsToGameHud() {
         assertTrue(GtObjectiveLine.matches("Steal a suitable vehicle"))
@@ -334,12 +333,18 @@ class GtOriginalBoundsTest {
 }
 ''',encoding="utf-8")
 
+# Dialogue captions have their own OCR stream. Never hold a previous
+# spoken translation for a minimum reading time AFTER English disappeared.
+once(cap,
+'''            if (emptyFrames >= 6 && shownSource.isNotEmpty() && yeterinceDurdu) {''',
+'''            if (emptyFrames >= 2 && shownSource.isNotEmpty()) {''')
+
 version=build.read_text()
 version,n=re.subn(r'(?m)^(\s*)versionCode\s*=\s*\d+',
-                  r'\g<1>versionCode = 20261207',version,count=1)
+                  r'\g<1>versionCode = 20261212',version,count=1)
 if n!=1:raise RuntimeError("Missing versionCode")
 version,n=re.subn(r'(?m)^(\s*)versionName\s*=\s*"[^"]+"',
-                  r'\g<1>versionName = "GameLingoPro-3.4-GT-SourceBounds"',version,count=1)
+                  r'\g<1>versionName = "GameLingoPro-3.9-GT-Visible-Only"',version,count=1)
 if n!=1:raise RuntimeError("Missing versionName")
 build.write_text(version,encoding="utf-8")
 print("GameLingoPro 3.4: source-bound GT HUD, long OCR presence, objective routing")
