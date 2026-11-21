@@ -46,16 +46,14 @@ span('    private fun stiliUygula(t: TextView, boyutSp: Float) {','\n    fun sho
     }
 ''')
 # GT HUD labels must use exactly the same chosen color and background.
-substitute('''                val tv = makeText(13f, 205)
-                container.addView(''',
+span('                val tv = makeText(14f, 255).apply {',
+'                container.addView(',
 '''                val tv = makeText(13f, 205)
                 stiliUygula(tv,(stil.boyutSp*.78f).coerceIn(12f,32f))
-                container.addView(''')
-substitute('''                val lp = tv.layoutParams as FrameLayout.LayoutParams
-                val screenWidth''',
+''')
+substitute('''                val rightSide = label.x >= screenWidth / 2''',
 '''                stiliUygula(tv,(stil.boyutSp*.78f).coerceIn(12f,32f))
-                val lp = tv.layoutParams as FrameLayout.LayoutParams
-                val screenWidth''')
+                val rightSide = label.x >= screenWidth / 2''')
 # Remove legacy marker and leave a single GT subtitle box.
 start='''            val shown: CharSequence = if (refined) {'''
 end='''            // NOT: taslak artık GRİYE boyanmıyor.'''
