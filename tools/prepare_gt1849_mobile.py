@@ -30,7 +30,7 @@ pub=mobile/"pubspec.yaml"
 s=pub.read_text(encoding="utf-8")
 s=s.replace("name: gametranslator_mobile","name: gamelingopro_mobile")
 pub.write_text(s,encoding="utf-8")
-for p in (mobile/"lib").rglob("*.dart"):
+for p in list((mobile/"lib").rglob("*.dart")) + list((mobile/"test").rglob("*.dart")):
     text=p.read_text(encoding="utf-8")
     text=text.replace("package:gametranslator_mobile/","package:gamelingopro_mobile/")
     text=text.replace("GameTranslator", "GameLingoPro")
