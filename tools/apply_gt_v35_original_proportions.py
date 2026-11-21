@@ -169,6 +169,20 @@ replace_once(unit,
         assertFalse(GtSourceBox.hold(1200,3600000L))''')
 
 
+# A mission objective is not a spoken subtitle. Clear the previous
+# large dialogue overlay, regardless of what that dialogue previously said.
+replace_once(service,
+'''            if(GtObjectiveLine.matches(shownSource)) {
+                shownSource=""
+                showSubtitle(null)
+            }''',
+'''            if(shownSource.isNotBlank()) {
+                shownSource=""
+                translatingFor=""
+                subtitleGeneration.invalidate()
+                showSubtitle(null)
+            }''')
+
 # The game's source is hidden by our opaque Turkish overlay. Read English in
 # a fresh uncovered capture, so text is cleared by disappearance, not by TTL.
 replace_once(service,'''    private var gtHudMissingScans=0''',
