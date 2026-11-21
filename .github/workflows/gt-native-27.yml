@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [fix/exact-ocr-layout-44]
+    branches: [fix/quest-boxes-only-45]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -21,6 +21,7 @@ on:
       - 'tools/apply_gt_v43_game_notices.py'
       - 'tools/apply_gt_v44_rect_overlay.py'
       - 'tools/apply_gt_v44_test_alignment.py'
+      - 'tools/apply_gt_v45_quest_boxes_only.py'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   pull_request:
     branches: [main]
@@ -34,6 +35,7 @@ on:
       - 'tools/apply_gt_v43_game_notices.py'
       - 'tools/apply_gt_v44_rect_overlay.py'
       - 'tools/apply_gt_v44_test_alignment.py'
+      - 'tools/apply_gt_v45_quest_boxes_only.py'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   workflow_dispatch:
 permissions:
@@ -231,6 +233,15 @@ jobs:
           test -f app/src/test/java/com/example/altyazi/GtExactMapRegions44Test.kt
       - name: Align prior OCR regression assertions with new source presence checks
         run: python3 tools/apply_gt_v44_test_alignment.py
+      - name: Restrict phone game overlays to boxed selected map missions
+        run: python3 tools/apply_gt_v45_quest_boxes_only.py .
+      - name: Verify unwanted in-world and weapon overlays are disabled
+        run: |
+          grep -q 'GameLingoPro-4.5-QuestBoxesOnly' app/build.gradle.kts
+          grep -q 'if(gtQuestBoxesOnly())' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'if (isTv) processSubtitle(full)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'gtPanelRects\[slot\]==null' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtMapBoxOnly45Test.kt
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
@@ -240,12 +251,13 @@ jobs:
           cp app/src/main/java/com/example/altyazi/GtMenuPriority.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtSelectedMapPanel.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtGameNotice.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtMapBoxOnly.kt dist/source/
           cp app/src/main/java/com/example/altyazi/GtStyleContract.kt dist/source/
           cp app/src/main/java/com/example/altyazi/CaptureService.kt dist/source/
           cp app/src/main/java/com/example/altyazi/Overlay.kt dist/source/
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-V44-Source-Inspection
+          name: GameLingoPro-V45-Source-Inspection
           path: dist/source
           if-no-files-found: error
       - uses: actions/setup-java@v5
@@ -267,6 +279,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-4.4-GT-ExactScreenRegions
+          name: GameLingoPro-4.5-SelectedQuestBoxesOnly
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
