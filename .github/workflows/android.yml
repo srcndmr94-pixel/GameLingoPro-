@@ -58,6 +58,16 @@ jobs:
           test -f app/src/main/res/raw/pro_intro_theme.wav
           grep -q 'ProIntroActivity' app/src/main/AndroidManifest.xml
           grep -q 'com.gamelingo.pro' app/build.gradle.kts
+      - name: Apply source-location subtitle positioning
+        run: python3 tools/apply_pro_spatial_labels.py
+      - name: Apply GameTranslator-style functional settings groups
+        run: python3 tools/apply_pro_settings_map.py
+      - name: Verify Pro settings and OCR positions
+        shell: bash
+        run: |
+          grep -q 'ayarEkranPaylas' app/src/main/res/layout/activity_main.xml
+          grep -q 'rightX' app/src/main/java/com/example/altyazi/Overlay.kt
+          grep -q 'item.copy(text = translated)' app/src/main/java/com/example/altyazi/CaptureService.kt
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
