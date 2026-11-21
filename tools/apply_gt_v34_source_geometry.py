@@ -55,7 +55,7 @@ once(menu,
 '''                GtAllHud.Card(zone,text,left,top,right,bottom,group.size)''')
 
 # Pure Kotlin geometry and presence rules are covered by automated JUnit tests.
-geometry='''package com.example.altyazi
+geometry=r'''package com.example.altyazi
 
 /** Exact OCR rectangle based placement; all sizes are SCREEN PIXELS. */
 internal object GtSourceBox {
