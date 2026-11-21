@@ -13,35 +13,35 @@ def replace(file,old,new):
     if s.count(old)!=1: raise RuntimeError(f"Unexpected {file.name}: {s.count(old)} matches for {old[:60]}")
     file.write_text(s.replace(old,new,1))
 
-replace(ass,'''            return Regex("""(?i)\b(?:and|but|while|although|because|with|to|for|if|or|then|now|she's|he's|it's|they're|we're|i'm)\s*$""").containsMatchIn(s)''',
-'''            return Regex("""(?i)\b(?:and|but|while|although|because|with|to|for|if|or|then|now|she's|he's|it's|they're|we're|i'm|the|a|an|of|at|in|on|from|by|his|her|their|our|this|that|is|are|were|was|did|do|does|would|could|should|will|has|have)\s*$""").containsMatchIn(s) ||
+replace(ass,r'''            return Regex("""(?i)\b(?:and|but|while|although|because|with|to|for|if|or|then|now|she's|he's|it's|they're|we're|i'm)\s*$""").containsMatchIn(s)''',
+r'''            return Regex("""(?i)\b(?:and|but|while|although|because|with|to|for|if|or|then|now|she's|he's|it's|they're|we're|i'm|the|a|an|of|at|in|on|from|by|his|her|their|our|this|that|is|are|were|was|did|do|does|would|could|should|will|has|have)\s*$""").containsMatchIn(s) ||
                 (s.length > 68 && Regex("""(?i)\b(?:and|but|or)\s+(?:(?:\p{L}+[ '’]*){1,4})$""").containsMatchIn(s)) ||
                 Regex("""(?i)\b(?:and|but)\s+[\p{L}-]*ing\s*$""").containsMatchIn(s)''')
 replace(ass,"if(wordCount(previous)-wordCount(next)<2)return false",
             "if(wordCount(previous)-wordCount(next)<1)return false")
-replace(cap,'''        val gerekenOkuma = if (text.trimEnd().endsWith(",")) 2
+replace(cap,r'''        val gerekenOkuma = if (text.trimEnd().endsWith(",")) 2
             else if (tamamGorunuyor && SubtitlePreparation.confidentFirstRead(text)) 1 else 2''',
-'''        val gerekenOkuma = if (text.length > 88 ||
+r'''        val gerekenOkuma = if (text.length > 88 ||
             ProSubtitleAssembler.likelyContinued(text) || text.trimEnd().endsWith(",")) 2
             else if (tamamGorunuyor && SubtitlePreparation.confidentFirstRead(text)) 1 else 2''')
 replace(cap,"android.os.SystemClock.elapsedRealtime() - candidateStartedAtMs < 1000L) return",
             "android.os.SystemClock.elapsedRealtime() - candidateStartedAtMs < 1250L) return")
-replace(cap,'''        if (ProSubtitleAssembler.likelyContinued(text) &&
+replace(cap,r'''        if (ProSubtitleAssembler.likelyContinued(text) &&
             android.os.SystemClock.elapsedRealtime() - candidateStartedAtMs < 1250L) return''',
-'''        if (ProSubtitleAssembler.likelyContinued(text) &&
+r'''        if (ProSubtitleAssembler.likelyContinued(text) &&
             android.os.SystemClock.elapsedRealtime() - candidateStartedAtMs < 1250L) {
             if (prefs.diagnostics && candidateSeen == 2)
                 log("EKSİK CÜMLE BEKLENİYOR: ${text.take(90)}")
             return
         }''')
-replace(cap,'''        if (runId != null && !subtitleGeneration.isCurrent(runId)) {
+replace(cap,r'''        if (runId != null && !subtitleGeneration.isCurrent(runId)) {
             log("ESKİ İSTEK ATLANDI: ${source.take(65)}")
             return
         }
         // All producers (dictionary, memory, Google, Firefox, device AI, bridge)
         // converge here. Do not poison caches with structurally suspicious output.
         val outputIssue = TranslationQualityGate.check(source, value)''',
-'''        // Never show a stale result over a different active subtitle.
+r'''        // Never show a stale result over a different active subtitle.
         // Preserve valid late translations in cache for repeated game prompts.
         val outputIssue = TranslationQualityGate.check(source, value)
         if (runId != null && !subtitleGeneration.isCurrent(runId)) {
@@ -51,17 +51,17 @@ replace(cap,'''        if (runId != null && !subtitleGeneration.isCurrent(runId)
             } else log("ESKİ İSTEK EKRANA BASILMADI: ${source.take(65)}")
             return
         }''')
-replace(cap,'''                        bandImza = null
+replace(cap,r'''                        bandImza = null
                         overlay.clearLabels()''',
-'''                        bandImza = null
+r'''                        bandImza = null
                         proSubtitleAssembler.clear()
                         candidate = ""
                         candidateSeen = 0
                         lastOcrRaw = ""
                         overlay.clearLabels()''')
-replace(gate,'''        if (s.count { it == '?' } >= 2 && t.count { it == '?' } < s.count { it == '?' })
+replace(gate,r'''        if (s.count { it == '?' } >= 2 && t.count { it == '?' } < s.count { it == '?' })
             return Problem.MISSING_QUESTION''',
-'''        if (s.count { it == '?' } >= 2 && t.count { it == '?' } < s.count { it == '?' })
+r'''        if (s.count { it == '?' } >= 2 && t.count { it == '?' } < s.count { it == '?' })
             return Problem.MISSING_QUESTION
         // A long English contrastive clause must not simply vanish.
         if (Regex("""(?i)\bbut\s+\w+""").containsMatchIn(s) &&
