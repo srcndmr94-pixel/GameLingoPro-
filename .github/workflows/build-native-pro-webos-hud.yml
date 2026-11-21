@@ -7,6 +7,7 @@ on:
       - 'tools/apply_native_gamelingopro_webos_hud.py'
       - 'tools/apply_native_pro_translation_quality.py'
       - 'tools/apply_pro_hud_cards_fix.py'
+      - 'tools/apply_pro_subtitle_flow_23.py'
       - 'tools/ProHudCards.kt'
   workflow_dispatch:
 permissions:
@@ -49,6 +50,14 @@ jobs:
         run: python3 tools/apply_native_pro_translation_quality.py .
       - name: Fix left mission and right bottom reward cards
         run: python3 tools/apply_pro_hud_cards_fix.py .
+      - name: Fix continued subtitle OCR and compact phone layout
+        run: python3 tools/apply_pro_subtitle_flow_23.py .
+      - name: Verify repaired OCR continuation and translation quality
+        run: |
+          grep -q 'meaningfulExpansion' app/src/main/java/com/example/altyazi/ProTranscriptGuard.kt
+          grep -q 'gapFactor' app/src/main/java/com/example/altyazi/OfflineFix.kt
+          grep -q 'serve as a medium' app/src/main/java/com/example/altyazi/TranslationQualityGate.kt
+          grep -q 'versionCode = 20261124' app/build.gradle.kts
       - name: Verify grouped HUD cards and original Android app
         run: |
           grep -q 'ProHudCards.group' app/src/main/java/com/example/altyazi/CaptureService.kt
@@ -61,12 +70,12 @@ jobs:
           grep -q 'ProTranscriptGuard.speakersCompatible' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'ProTranscriptGuard.separateObjective' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'ProTranscriptGuard.literalIdiom' app/src/main/java/com/example/altyazi/TranslationQualityGate.kt
-          grep -q 'versionCode = 20261123' app/build.gradle.kts
+          grep -q 'versionCode = 20261124' app/build.gradle.kts
       - name: Verify Pro native identity and spatial translation hooks
         shell: bash
         run: |
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
-          grep -q 'versionCode = 20261123' app/build.gradle.kts
+          grep -q 'versionCode = 20261124' app/build.gradle.kts
           grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'class PhoneBridgeService' app/src/main/java/com/example/altyazi/PhoneBridge.kt
           grep -q 'region' webos/index.html
@@ -111,16 +120,16 @@ jobs:
           ar q ../GameLingoPro-webOS-HUD-1.1.0.ipk debian-binary control.tar.gz data.tar.gz
           ar t ../GameLingoPro-webOS-HUD-1.1.0.ipk
           cd ../..
-          cp app/build/outputs/apk/debug/app-debug.apk dist/GameLingoPro-Android-OCR22-HUD-Cards-debug.apk
+          cp app/build/outputs/apk/debug/app-debug.apk dist/GameLingoPro-Android-OCR23-SubtitleFlow-debug.apk
       - name: Ensure deliverables were both created
         run: |
-          test -s dist/GameLingoPro-Android-OCR22-HUD-Cards-debug.apk
+          test -s dist/GameLingoPro-Android-OCR23-SubtitleFlow-debug.apk
           test -s dist/GameLingoPro-webOS-HUD-1.1.0.ipk
       - name: Upload native GameLingoPro APK and webOS IPK
         uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-Original-App-OCR22
+          name: GameLingoPro-Original-App-OCR23
           path: |
-            dist/GameLingoPro-Android-OCR22-HUD-Cards-debug.apk
+            dist/GameLingoPro-Android-OCR23-SubtitleFlow-debug.apk
             dist/GameLingoPro-webOS-HUD-1.1.0.ipk
           if-no-files-found: error
