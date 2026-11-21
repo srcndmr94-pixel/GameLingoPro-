@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [feature/gt-auto-region-settings]
+    branches: [feature/gt-fixed-hud-33]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -13,6 +13,7 @@ on:
       - 'tools/apply_gt_v301_real_settings.py'
       - 'tools/apply_gt_v31_menus.py'
       - 'tools/apply_gt_v32_auto_region_settings.py'
+      - 'tools/apply_gt_v33_fixed_hud_font.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -145,6 +146,15 @@ jobs:
           grep -q 'Color.red(stil.arkaRenk)' app/src/main/java/com/example/altyazi/Overlay.kt
           grep -q 't.maxLines = Int.MAX_VALUE' app/src/main/java/com/example/altyazi/Overlay.kt
           test -f app/src/main/assets/GameTranslator-LICENSE.txt
+      - name: Separate fixed 12sp GT HUD/menu font from adjustable bottom subtitles
+        run: python3 tools/apply_gt_v33_fixed_hud_font.py .
+      - name: Verify only HUD/menu font is fixed
+        run: |
+          grep -q 'versionName = "GameLingoPro-3.3-GT-FixedHUD"' app/build.gradle.kts
+          grep -q 'fun hudSp(@Suppress("UNUSED_PARAMETER") chosen:Float):Float=12f' app/src/main/java/com/example/altyazi/GtStyleContract.kt
+          grep -q 'GtStyleContract.hudSp(style.boyutSp)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtStyleContract.captionSp(style.boyutSp)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          test -f app/src/test/java/com/example/altyazi/GtHudFixedFontTest.kt
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -164,6 +174,6 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-3.2-GT-Auto-Areas
+          name: GameLingoPro-3.3-GT-Fixed-HUD-Font
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
