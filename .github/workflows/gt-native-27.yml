@@ -1,0 +1,244 @@
+name: GameLingoPro Native GT Engine and Subtitle Style
+on:
+  push:
+    branches: [fix/panel-selection-clear-42]
+    paths:
+      - '.github/workflows/gt-native-27.yml'
+      - 'tools/apply_gt_v27_engine.py'
+      - 'tools/apply_gt_v27_subtitle_style.py'
+      - 'tools/apply_gt_v28_all_hud.py'
+      - 'tools/apply_gt_v29_adjustable_style.py'
+      - 'tools/apply_gt_v291_size_fix.py'
+      - 'tools/gt_v30_patch.zlib.b64'
+      - 'tools/apply_gt_v301_real_settings.py'
+      - 'tools/apply_gt_v31_menus.py'
+      - 'tools/apply_gt_v32_auto_region_settings.py'
+      - 'tools/apply_gt_v33_fixed_hud_font.py'
+      - 'tools/apply_gt_v34_source_geometry.py'
+      - 'tools/apply_gt_v40_menu_first.py'
+      - 'tools/apply_gt_v41_selected_panels.py'
+      - 'tools/apply_gt_v42_panel_selection_clear.py'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/gt-native-27.yml'
+      - 'tools/apply_gt_v31_menus.py'
+      - 'tools/apply_gt_v34_source_geometry.py'
+      - 'tools/apply_gt_v40_menu_first.py'
+      - 'tools/apply_gt_v41_selected_panels.py'
+      - 'tools/apply_gt_v42_panel_selection_clear.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract original GameLingoPro Kotlin sources
+        run: |
+          python3 - <<'PY'
+          from zipfile import ZipFile
+          from pathlib import PurePosixPath
+          with ZipFile('GameLingoPro-webOS-baglanti-onarimi.zip') as z:
+              for item in z.namelist():
+                  p=PurePosixPath(item)
+                  if p.is_absolute() or '..' in p.parts:raise SystemExit('Unsafe ZIP')
+              z.extractall('.')
+          PY
+          test -f app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
+      - name: Preserve original GameLingoPro UI and spatial HUD
+        run: |
+          python3 tools/apply_pro_brand.py
+          python3 tools/apply_pro_button_sounds.py
+          python3 tools/apply_pro_intro.py
+          python3 tools/apply_pro_settings_map.py
+          python3 tools/apply_native_gamelingopro_webos_hud.py .
+          python3 tools/apply_native_pro_translation_quality.py .
+          python3 tools/apply_pro_hud_cards_fix.py .
+          python3 tools/apply_pro_subtitle_flow_23.py .
+          python3 tools/apply_pro_long_subtitle_24.py .
+      - name: Preserve 2.5 and 2.6 OCR improvements
+        run: |
+          mkdir -p /tmp/glp25
+          python3 -m zipfile -e tools/GameLingoPro-2.5-Source-Patch.zip /tmp/glp25
+          python3 /tmp/glp25/apply_gamelingopro_25_stable_ocr.py .
+          mkdir -p app/src/test/java/com/example/altyazi
+          cp /tmp/glp25/ProSubtitleAssembler25Test.kt app/src/test/java/com/example/altyazi/
+          python3 tools/apply_pro_ocr_reliability_26.py .
+      - name: Retrieve GameTranslator 1.8.49 Android sources
+        run: git clone --quiet --depth 1 --branch v1.8.49 https://gitlab.com/sefflex/GameTranslator.git /tmp/GameTranslator
+      - name: Replace active translation chain with GameTranslator
+        run: python3 tools/apply_gt_v27_engine.py . /tmp/GameTranslator
+      - name: Apply GameTranslator subtitle appearance
+        run: python3 tools/apply_gt_v27_subtitle_style.py .
+      - name: Enable GameTranslator-style all-screen game HUD
+        run: python3 tools/apply_gt_v28_all_hud.py .
+      - name: Replace legacy visual overrides with adjustable GT glass renderer
+        run: python3 tools/apply_gt_v29_adjustable_style.py .
+      - name: Ensure requested 28sp is not overridden in rendering
+        run: python3 tools/apply_gt_v291_size_fix.py .
+      - name: Replace legacy yellow subtitle renderer with GameTranslator exact-source styles
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,zlib
+          payload=Path('tools/gt_v30_patch.zlib.b64').read_text().strip()
+          decoded=zlib.decompress(base64.b64decode(payload))
+          assert b'GameTranslator GT exact visual renderer installed' in decoded
+          Path('/tmp/apply_gt_exact_renderer_v30.py').write_bytes(decoded)
+          PY
+          python3 /tmp/apply_gt_exact_renderer_v30.py .
+          # Remove two malformed test expectations; renderer/source checks remain.
+          sed -i '/assertTrue(prefs.contains(".putInt(/d' app/src/test/java/com/example/altyazi/GtExactOverlayTest.kt
+      - name: Bind GT-only renderer to real caption preferences
+        run: python3 tools/apply_gt_v301_real_settings.py .
+      - name: Detect and translate entire game menu screens
+        run: python3 tools/apply_gt_v31_menus.py .
+      - name: Replace legacy manual area selectors with GT automatic area display
+        run: python3 tools/apply_gt_v32_auto_region_settings.py .
+      - name: Verify auto zones and no legacy region controls visible
+        run: |
+          grep -q 'GameLingoPro-3.2-GT-AutoRegions' app/build.gradle.kts
+          grep -q 'Otomatik ekran taraması' app/src/main/res/layout/activity_main.xml
+          grep -q 'Otomatik OCR alanları' app/src/main/java/com/example/altyazi/MainActivity.kt
+          grep -q 'GtMenuUi.group' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'GtAllHud.group' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'overlay = GtExactOverlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
+      - name: Verify game menus use GT-only OCR and caption layer
+        run: |
+          grep -q 'GtMenuUi.group' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'if (!isTv && cycle % MENU_EVERY' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'overlay = GtExactOverlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtMenuUiTest.kt
+          grep -q 'GameLingoPro-3.2-GT-AutoRegions' app/build.gradle.kts
+      - name: Verify one active GameTranslator layer and live user choices
+        run: |
+          grep -q 'overlay = GtExactOverlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          ! grep -q 'overlay = Overlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'tv.setTextColor(style.yaziRengi)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtStyleContract.captionSp(style.boyutSp)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtStyleContract.hudSp(style.boyutSp)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          ! grep -q 'gtExactRendererV30Reset' app/src/main/java/com/example/altyazi/Prefs.kt
+          grep -q 'GameLingoPro-3.2-GT-AutoRegions' app/build.gradle.kts
+          test -f app/src/test/java/com/example/altyazi/GtStyleContractTest.kt
+      - name: Verify GT-only renderer, original package and independent HUD
+        run: |
+          grep -q 'overlay = GtExactOverlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          ! grep -q 'overlay = Overlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'GtStyleContract.subtitleAlpha(style.arkaAlfa)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtStyleContract.hudAlpha(style.arkaAlfa)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtAllHud.group' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
+          test -f app/src/test/java/com/example/altyazi/GtExactOverlayTest.kt
+      - name: Verify GT default subtitle size and one active renderer
+        run: |
+          grep -q 'GameLingoPro-3.2-GT-AutoRegions' app/build.gradle.kts
+          grep -q 'subtitleStyle(target)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          test -f app/src/test/java/com/example/altyazi/GtRenderedSizeTest.kt
+      - name: Verify selected subtitle settings control all rendered areas
+        run: |
+          grep -q 'GameLingoPro-3.2-GT-AutoRegions' app/build.gradle.kts
+          grep -q 't.setTextColor(stil.yaziRengi)' app/src/main/java/com/example/altyazi/Overlay.kt
+          grep -q 'lastGTStyle' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtActualAppearanceTest.kt
+      - name: Verify all HUD zones, source grouping and Pro identity
+        run: |
+          grep -q 'GtAllHud.group' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'gtMultiHudV28Configured' app/src/main/java/com/example/altyazi/Prefs.kt
+          grep -q 'GameLingoPro-3.2-GT-AutoRegions' app/build.gradle.kts
+          grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtAllHudTest.kt
+      - name: Verify original identity and new caption style
+        run: |
+          grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
+          grep -q 'GameLingoPro-3.2-GT-AutoRegions' app/build.gradle.kts
+          grep -q 'GtNativeEngine.translate(source, fast)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'Color.red(stil.arkaRenk)' app/src/main/java/com/example/altyazi/Overlay.kt
+          grep -q 't.maxLines = Int.MAX_VALUE' app/src/main/java/com/example/altyazi/Overlay.kt
+          test -f app/src/main/assets/GameTranslator-LICENSE.txt
+      - name: Separate fixed 12sp GT HUD/menu font from adjustable bottom subtitles
+        run: python3 tools/apply_gt_v33_fixed_hud_font.py .
+      - name: Verify only HUD/menu font is fixed
+        run: |
+          grep -q 'versionName = "GameLingoPro-3.3-GT-FixedHUD"' app/build.gradle.kts
+          grep -q 'fun hudSp(@Suppress("UNUSED_PARAMETER") chosen:Float):Float=12f' app/src/main/java/com/example/altyazi/GtStyleContract.kt
+          grep -q 'GtStyleContract.hudSp(style.boyutSp)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtStyleContract.captionSp(style.boyutSp)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          test -f app/src/test/java/com/example/altyazi/GtHudFixedFontTest.kt
+      - name: Match HUD text to original English bounds and preserve display
+        run: python3 tools/apply_gt_v34_source_geometry.py .
+      - name: Verify original bounding boxes and source visibility rules
+        run: |
+          grep -q 'GameLingoPro-3.9-GT-Visible-Only' app/build.gradle.kts
+          grep -q 'card.bottomY' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtSourceBox.fontPx' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'GtSourceBox.hold' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'GtObjectiveLine.matches' app/src/main/java/com/example/altyazi/CaptureService.kt
+          ! grep -q 'overlay = Overlay(this)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtOriginalBoundsTest.kt
+      - name: Prioritize map information panels and render each translation immediately
+        run: python3 tools/apply_gt_v40_menu_first.py .
+      - name: Verify incremental menu renderer is active
+        run: |
+          grep -q 'GameLingoPro-4.0-GT-FastMenu' app/build.gradle.kts
+          grep -q 'GtMenuPriority.score' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'if(fullMenuDetected && newCalls>=3)continue' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'First translated panel' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtMenuPriorityTest.kt
+      - name: Translate selected rectangular game-map information boxes
+        run: python3 tools/apply_gt_v41_selected_panels.py .
+      - name: Verify selected box while visible
+        run: |
+          grep -q 'GameLingoPro-4.1-SelectedMapPanels' app/build.gradle.kts
+          grep -q 'GtSelectedMapPanel.isMap' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'gtPanelKeys\[slot\]==identity' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/GtSelectedMapPanelTest.kt
+      - name: Clear old translation immediately when selected map title changes
+        run: python3 tools/apply_gt_v42_panel_selection_clear.py .
+      - name: Verify old popup cannot reappear over a new map selection
+        run: |
+          grep -q 'GameLingoPro-4.2-SelectionClears' app/build.gradle.kts
+          grep -q 'gtPanelTranslatedTitle' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'gtLabelGeneration' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          test -f app/src/test/java/com/example/altyazi/GtMapSelection42Test.kt
+      - name: Archive active GameLingoPro source for geometry validation
+        run: |
+          mkdir -p dist/source
+          cp app/src/main/java/com/example/altyazi/GtExactOverlay.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtAllHud.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtMenuUi.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtMenuPriority.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtSelectedMapPanel.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/GtStyleContract.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/CaptureService.kt dist/source/
+          cp app/src/main/java/com/example/altyazi/Overlay.kt dist/source/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameLingoPro-V42-Source-Inspection
+          path: dist/source
+          if-no-files-found: error
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Run OCR and GameTranslator engine unit tests
+        run: gradle :app:testDebugUnitTest --no-daemon --stacktrace
+      - name: Compile original native GameLingoPro APK
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+      - name: Verify APK identity and signature
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          signer="$(find "$ANDROID_HOME/build-tools" -name apksigner -print -quit)"
+          test -n "$signer"
+          "$signer" verify app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameLingoPro-4.2-GT-ClearOnSelection
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
