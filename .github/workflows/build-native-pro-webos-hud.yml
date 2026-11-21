@@ -10,6 +10,7 @@ on:
       - 'tools/apply_pro_subtitle_flow_23.py'
       - 'tools/apply_pro_long_subtitle_24.py'
       - 'tools/GameLingoPro-2.5-Source-Patch.zip'
+      - 'tools/apply_pro_ocr_reliability_26.py'
       - 'tools/ProSubtitleAssembler.kt'
       - 'tools/ProHudCards.kt'
   workflow_dispatch:
@@ -77,20 +78,26 @@ jobs:
           PY
           test -f app/src/test/java/com/example/altyazi/ProSubtitleAssembler25Test.kt
           grep -q 'expanded.recycle()' app/src/main/java/com/example/altyazi/CaptureService.kt
-          grep -q 'versionCode = 20261126' app/build.gradle.kts
+          grep -q 'versionCode = 20261127' app/build.gradle.kts
+      - name: Repair 2.5 OCR regressions using original GameLingoPro sources
+        run: |
+          python3 tools/apply_pro_ocr_reliability_26.py .
+          grep -q 'GameLingoPro-2.6-OCR-Flow' app/build.gradle.kts
+          grep -q 'ESKİ İSTEK HAFIZAYA ALINDI' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/ProSubtitleFlowTest.kt
       - name: Verify full-subtitle OCR patch and original GameLingoPro ID
         run: |
           grep -q 'ProSubtitleAssembler.fuller' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'candidateStartedAtMs' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 't.maxLines = Int.MAX_VALUE' app/src/main/java/com/example/altyazi/Overlay.kt
-          grep -q 'versionCode = 20261126' app/build.gradle.kts
+          grep -q 'versionCode = 20261127' app/build.gradle.kts
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
       - name: Verify repaired OCR continuation and translation quality
         run: |
           grep -q 'meaningfulExpansion' app/src/main/java/com/example/altyazi/ProTranscriptGuard.kt
           grep -q 'gapFactor' app/src/main/java/com/example/altyazi/OfflineFix.kt
           grep -q 'serve as a medium' app/src/main/java/com/example/altyazi/TranslationQualityGate.kt
-          grep -q 'versionCode = 20261126' app/build.gradle.kts
+          grep -q 'versionCode = 20261127' app/build.gradle.kts
       - name: Verify grouped HUD cards and original Android app
         run: |
           grep -q 'ProHudCards.group' app/src/main/java/com/example/altyazi/CaptureService.kt
@@ -103,12 +110,12 @@ jobs:
           grep -q 'ProTranscriptGuard.speakersCompatible' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'ProTranscriptGuard.separateObjective' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'ProTranscriptGuard.literalIdiom' app/src/main/java/com/example/altyazi/TranslationQualityGate.kt
-          grep -q 'versionCode = 20261126' app/build.gradle.kts
+          grep -q 'versionCode = 20261127' app/build.gradle.kts
       - name: Verify Pro native identity and spatial translation hooks
         shell: bash
         run: |
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
-          grep -q 'versionCode = 20261126' app/build.gradle.kts
+          grep -q 'versionCode = 20261127' app/build.gradle.kts
           grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'class PhoneBridgeService' app/src/main/java/com/example/altyazi/PhoneBridge.kt
           grep -q 'region' webos/index.html
@@ -128,6 +135,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
+      - name: Execute JUnit OCR regression tests
+        run: gradle :app:testDebugUnitTest --no-daemon
       - name: Compile GameLingoPro Android debug APK
         run: gradle :app:testDebugUnitTest :app:assembleDebug --no-daemon --stacktrace
       - name: Verify signed APK and package identity
