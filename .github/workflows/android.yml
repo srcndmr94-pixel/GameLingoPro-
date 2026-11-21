@@ -58,8 +58,13 @@ jobs:
           test -f app/src/main/res/raw/pro_intro_theme.wav
           grep -q 'ProIntroActivity' app/src/main/AndroidManifest.xml
           grep -q 'com.gamelingo.pro' app/build.gradle.kts
-      - name: Apply source-location subtitle positioning
-        run: python3 tools/apply_pro_spatial_labels.py
+      - name: Apply real GameLingoPro side-HUD + webOS integration
+        run: python3 tools/apply_native_gamelingopro_webos_hud.py .
+      - name: Verify native Pro integration
+        run: |
+          test -f app/src/main/java/com/example/altyazi/ProHudRegion.kt
+          grep -q 'PhoneBridgeService.publishHud' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'versionCode = 20261121' app/build.gradle.kts
       - name: Apply GameTranslator-style functional settings groups
         run: python3 tools/apply_pro_settings_map.py
       - name: Verify Pro settings and OCR positions
