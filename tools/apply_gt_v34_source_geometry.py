@@ -77,7 +77,7 @@ internal object GtSourceBox {
 /** Only short unpunctuated game instructions, never full spoken dialogue. */
 internal object GtObjectiveLine {
     private val verbs=Regex(
-        """(?i)^(?:steal|collect|find|follow|reach|meet|escape|interact with|go to|talk to|head to|drive to|wait for|pick up|return to|take a|use the|enter the|locate)\\b"""
+        """(?i)^(?:steal|collect|find|follow|reach|meet|escape|interact with|go to|talk to|head to|drive to|wait for|pick up|return to|take a|use the|enter the|locate)\b"""
     )
     fun matches(raw:String):Boolean {
         val s=raw.trim()
@@ -122,6 +122,17 @@ once(cap,
 
         if (text.isEmpty()) {''')
 
+once(cap,
+'''                        overlay.clearLabels()
+                        lastMenuKey = ""''',
+'''                        overlay.clearLabels()
+                        lastMenuKey = ""
+                        lastHudLabels=emptyList()
+                        gtHeldLabels.clear()
+                        gtHudMissingScans=0
+                        gtHudLastConfirmedAtMs=0L
+                        gtLastMenuMode=null''')
+
 # An empty OCR pass is not evidence that original source text disappeared:
 # our opaque replacement box may obstruct its English letters in a capture.
 once(cap,
@@ -156,6 +167,16 @@ once(cap,
             }
         }
         if (key != gtHudCandidateKey) {''')
+once(cap,
+'''            PhoneBridgeService.publishHud(lastHudLabels,screenWidth,screenHeight)
+            return
+        }
+        lastMenuKey=key''',
+'''            gtHeldLabels.forEach{it.lastSeenMs=hudNow}
+            PhoneBridgeService.publishHud(lastHudLabels,screenWidth,screenHeight)
+            return
+        }
+        lastMenuKey=key''')
 once(cap,
 '''        if(cards.isEmpty()){
             overlay.clearLabels()
