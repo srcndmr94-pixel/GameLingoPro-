@@ -151,17 +151,32 @@ class ProIntroActivity : Activity() {
             val t=(SystemClock.uptimeMillis()-began).coerceAtLeast(0)
             canvas.drawColor(Color.rgb(2,3,15))
             canvas.save()
-            canvas.scale(width/360f,height/800f)
+            // Preserve proportions and draw at native display resolution.
+            val sc=kotlin.math.min(width/360f,height/800f).coerceAtLeast(.01f)
+            canvas.translate((width-360f*sc)/2f,(height-800f*sc)/2f)
+            canvas.scale(sc,sc)
+            // Continuously animated procedural strokes; no raster slides or bitmap scaling.
+            val seconds=t/1000f
+            val phase=kotlin.math.sin(seconds*1.35f)
             // Two glowing swooshes reproduce the turquoise-violet opening palette.
             neon(canvas,Path().apply {
-                moveTo(32f,240f);cubicTo(115f,145f,252f,192f,328f,68f)
+                moveTo(32f,240f+phase*18f);cubicTo(115f,145f+phase*22f,252f,192f-phase*19f,328f,68f+phase*28f)
             },turquoise,2.7f)
             neon(canvas,Path().apply {
-                moveTo(-30f,716f);cubicTo(121f,578f,204f,716f,391f,552f)
+                moveTo(-30f,716f-phase*12f);cubicTo(121f,578f+phase*23f,204f,716f-phase*16f,391f,552f+phase*26f)
             },violet,3.3f)
             neon(canvas,Path().apply {
-                moveTo(-24f,690f);cubicTo(123f,640f,202f,710f,383f,592f)
+                moveTo(-24f,690f+phase*9f);cubicTo(123f,640f-phase*25f,202f,710f+phase*14f,383f,592f-phase*18f)
             },turquoise,1.8f)
+            // Small moving glints add subtle motion throughout the intro.
+            for(i in 0 until 18) {
+                val x=30f+(i*19f+kotlin.math.sin(seconds*1.2f+i)*11f)%300f
+                val y=195f+(i*31)%385+kotlin.math.cos(seconds*.75f+i)*17f
+                p.reset();p.isAntiAlias=true
+                p.color=if(i%3==0)violet else turquoise
+                p.alpha=(80+75*(.5f+.5f*kotlin.math.sin(seconds*2f+i))).toInt().coerceIn(0,255)
+                canvas.drawCircle(x,y,if(i%4==0)1.5f else .85f,p)
+            }
             val stage=when {t<780->0;t<1770->1;t<2950->2;else->3}
             if(stage>=1) {
                 val pad=Path().apply {
@@ -193,11 +208,12 @@ class ProIntroActivity : Activity() {
                 title(canvas,"GameLingo",72f,455f,34f,Color.WHITE)
                 title(canvas,"Pro",259f,455f,34f,turquoise)
             }
-            if(stage==2) {
+            if(t>=1770 && t<4000) {
                 p.reset();p.isAntiAlias=true
                 p.shader=LinearGradient(91f,0f,267f,0f,turquoise,violet,Shader.TileMode.CLAMP)
                 p.setShadowLayer(13f,0f,0f,turquoise)
-                canvas.drawRoundRect(90f,515f,270f,526f,6f,6f,p)
+                val fill=((t-1770)/2100f).coerceIn(0f,1f)
+                canvas.drawRoundRect(90f,515f,90f+180f*fill,526f,6f,6f,p)
                 p.clearShadowLayer();p.shader=null
                 for(i in 0..2) {
                     p.color=if(i==0) turquoise else Color.rgb(21,78,145)
@@ -205,7 +221,7 @@ class ProIntroActivity : Activity() {
                 }
             }
             canvas.restore()
-            if(t<durationMs && !ended.get()) postInvalidateDelayed(32L)
+            if(t<durationMs && !ended.get()) postInvalidateOnAnimation()
         }
     }
 }
