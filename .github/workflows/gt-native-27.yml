@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [fix/live-text-color-and-notice-52]
+    branches: [fix/clean-smoke-521]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -29,6 +29,7 @@ on:
       - 'tools/apply_gt_v50_test_alignment.py'
       - 'tools/apply_gt_v51_clean_ui.py'
       - 'tools/apply_gt_v52_user_colors.py'
+      - 'tools/apply_gt_v521_clean_smoke.py'
       - 'tools/ui51_patch.zlib.b64'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   pull_request:
@@ -51,6 +52,7 @@ on:
       - 'tools/apply_gt_v50_test_alignment.py'
       - 'tools/apply_gt_v51_clean_ui.py'
       - 'tools/apply_gt_v52_user_colors.py'
+      - 'tools/apply_gt_v521_clean_smoke.py'
       - 'tools/ui51_patch.zlib.b64'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   workflow_dispatch:
@@ -317,6 +319,15 @@ jobs:
           grep -q 'tv.setTextColor(style.yaziRengi)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
           test -f app/src/test/java/com/example/altyazi/GtUserColor52Test.kt
           ! grep -q 'gtQuestBoxesOnly' app/src/main/java/com/example/altyazi/CaptureService.kt
+      - name: Fix reproducible two-line notification and HUD color reset
+        run: python3 tools/apply_gt_v521_clean_smoke.py .
+      - name: Validate 5.2.1 features before any compilation
+        run: |
+          grep -q 'GameLingoPro-5.2.1-CleanQA' app/build.gradle.kts
+          grep -q 'setLabels(lastRenderedLabels)' app/src/main/java/com/example/altyazi/GtExactOverlay.kt
+          grep -q 'realGameCue' app/src/main/java/com/example/altyazi/GtGameNotice.kt
+          test -f app/src/test/java/com/example/altyazi/GtCleanRegression521Test.kt
+          ! grep -q 'gtQuestBoxesOnly' app/src/main/java/com/example/altyazi/CaptureService.kt
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
@@ -335,7 +346,7 @@ jobs:
           cp app/src/main/java/com/example/altyazi/Overlay.kt dist/source/
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-V52-Source-Inspection
+          name: GameLingoPro-V521-Source-Inspection
           path: dist/source
           if-no-files-found: error
       - uses: actions/setup-java@v5
@@ -345,10 +356,28 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Run OCR and GameTranslator engine unit tests
-        run: gradle :app:testDebugUnitTest --no-daemon --stacktrace
-      - name: Compile original native GameLingoPro APK
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+      - name: Remove previous Android compilation outputs (clean build)
+        run: gradle :app:clean --no-daemon --no-build-cache --stacktrace
+      - name: Run ALL OCR, dialogue, map, alert, color and UI unit tests without build cache
+        run: gradle :app:testDebugUnitTest --no-daemon --rerun-tasks --no-build-cache --stacktrace
+      - name: Assert full regression suite has no skipped/failed tests
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          suites=glob.glob('app/build/test-results/testDebugUnitTest/TEST-*.xml')
+          if not suites:raise SystemExit('No JUnit XML results')
+          total=failures=errors=skipped=0
+          for file in suites:
+              root=ET.parse(file).getroot()
+              total+=int(root.attrib.get('tests',0))
+              failures+=int(root.attrib.get('failures',0))
+              errors+=int(root.attrib.get('errors',0))
+              skipped+=int(root.attrib.get('skipped',0))
+          print(f'JUNIT_VERIFIED {total} executed; {failures} failure, {errors} errors, {skipped} skipped')
+          if total < 70 or failures or errors or skipped:raise SystemExit('Regression suite not clean')
+          PY
+      - name: Compile native GameLingoPro 5.2.1 APK from scratch
+        run: gradle :app:assembleDebug --no-daemon --rerun-tasks --no-build-cache --stacktrace
       - name: Verify APK identity and signature
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
@@ -357,7 +386,7 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-5.2-LiveColorsAndNotice
+          name: GameLingoPro-5.2.1-CleanQA
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Package complete tested 5.0 Android source tree
@@ -366,7 +395,7 @@ jobs:
           from pathlib import Path
           from zipfile import ZipFile, ZIP_DEFLATED
           root=Path('.')
-          output=Path('dist/GameLingoPro-5.2-Tam-Kaynak-Kodu.zip')
+          output=Path('dist/GameLingoPro-5.2.1-Tam-Kaynak-Kodu.zip')
           output.parent.mkdir(exist_ok=True,parents=True)
           source_dirs=['app/src','gradle/wrapper']
           source_files=[
@@ -392,7 +421,7 @@ jobs:
                       arc=p.as_posix()
                       if arc not in seen:z.write(p,arc);seen.add(arc)
               readme=(
-                'GameLingoPro 5.2 — TAM KAYNAK KODU\\n'
+                'GameLingoPro 5.2.1 — TAM KAYNAK KODU\\n'
                 'Bu arşiv CI tarafından patch zinciri uygulandıktan sonra oluşturuldu.\\n'
                 'Android kaynak: app/src/main/\\n'
                 'Birim testleri: app/src/test/\\n'
@@ -421,7 +450,7 @@ jobs:
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-5.2-Tam-Kaynak-Kodu
-          path: dist/GameLingoPro-5.2-Tam-Kaynak-Kodu.zip
+          name: GameLingoPro-5.2.1-Tam-Kaynak-Kodu
+          path: dist/GameLingoPro-5.2.1-Tam-Kaynak-Kodu.zip
           if-no-files-found: error
 
