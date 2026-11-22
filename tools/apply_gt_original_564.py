@@ -131,7 +131,7 @@ lines=cap.read_text(encoding='utf-8').splitlines()
 for i, line in enumerate(lines):
     if 'private var gtRealtimeLastOcrDurationMs' in line:
         lines[i]='    @Volatile private var gtRealtimeLastOcrDurationMs: Long = 0L'
-cap.write_text('\\n'.join(lines) + '\\n', encoding='utf-8')
+cap.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 check=next(line for line in cap.read_text().splitlines()
            if 'private var gtRealtimeLastOcrDurationMs' in line)
 assert check == '    @Volatile private var gtRealtimeLastOcrDurationMs: Long = 0L', repr(check)
