@@ -36,6 +36,7 @@ on:
       - 'tools/apply_gt_v54_subtitle_priority.py'
       - 'tools/gt_v55_sticky_map.zlib.b64'
       - 'tools/apply_gt_v55_sticky_map.py'
+      - 'tools/apply_gt_v55_pause_exit_test_fix.py'
       - 'tools/ui51_patch.zlib.b64'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   pull_request:
@@ -65,6 +66,7 @@ on:
       - 'tools/apply_gt_v54_subtitle_priority.py'
       - 'tools/gt_v55_sticky_map.zlib.b64'
       - 'tools/apply_gt_v55_sticky_map.py'
+      - 'tools/apply_gt_v55_pause_exit_test_fix.py'
       - 'tools/ui51_patch.zlib.b64'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   workflow_dispatch:
@@ -367,6 +369,8 @@ jobs:
           ! grep -q 'gtQuestBoxesOnly' app/src/main/java/com/example/altyazi/CaptureService.kt
       - name: Preserve selected-map translation until menu exit with user option
         run: python3 tools/apply_gt_v55_sticky_map.py .
+      - name: Recognize short PAUSED screen headings during menu exit
+        run: python3 tools/apply_gt_v55_pause_exit_test_fix.py
       - name: Verify 5.5 map-stay preference, detection and all subtitle modes
         run: |
           grep -q 'GameLingoPro-5.5-MapStay' app/build.gradle.kts
