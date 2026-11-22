@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [fix/clean-smoke-521]
+    branches: [fix/brand-identity-522]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -30,6 +30,8 @@ on:
       - 'tools/apply_gt_v51_clean_ui.py'
       - 'tools/apply_gt_v52_user_colors.py'
       - 'tools/apply_gt_v521_clean_smoke.py'
+      - 'tools/apply_gt_v522_brand_identity.py'
+      - 'tools/apply_gt_v53_dialogue_from_log.py'
       - 'tools/ui51_patch.zlib.b64'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   pull_request:
@@ -53,6 +55,8 @@ on:
       - 'tools/apply_gt_v51_clean_ui.py'
       - 'tools/apply_gt_v52_user_colors.py'
       - 'tools/apply_gt_v521_clean_smoke.py'
+      - 'tools/apply_gt_v522_brand_identity.py'
+      - 'tools/apply_gt_v53_dialogue_from_log.py'
       - 'tools/ui51_patch.zlib.b64'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   workflow_dispatch:
@@ -328,6 +332,21 @@ jobs:
           grep -q 'realGameCue' app/src/main/java/com/example/altyazi/GtGameNotice.kt
           test -f app/src/test/java/com/example/altyazi/GtCleanRegression521Test.kt
           ! grep -q 'gtQuestBoxesOnly' app/src/main/java/com/example/altyazi/CaptureService.kt
+      - name: Correct product branding while preserving licensed GT source
+        run: python3 tools/apply_gt_v522_brand_identity.py .
+      - name: Fix user-log spoken dialogue, OCR and pure sound caption handling
+        run: python3 tools/apply_gt_v53_dialogue_from_log.py .
+      - name: Verify GameLingoPro 5.3 version, branding and quality source
+        run: |
+          grep -q 'GameLingoPro-5.3-BrandAndDialogue' app/build.gradle.kts
+          grep -q 'GAMELINGOPRO · ALTYAZI ALANLARI' app/src/main/res/layout/activity_main.xml
+          ! grep -q 'GameTranslator otomatik tarama' app/src/main/res/layout/activity_main.xml
+          grep -q '<string name="app_name">GameLingoPro</string>' app/src/main/res/values/strings.xml
+          grep -q 'removeSceneDirections' app/src/main/java/com/example/altyazi/GtNativeEngine.kt
+          test -f app/src/main/assets/GameTranslator-LICENSE.txt
+          test -f app/src/main/assets/GameTranslator-NOTICE.txt
+          test -f app/src/test/java/com/example/altyazi/GtUserDialogue53Test.kt
+          test -f app/src/test/java/com/example/altyazi/GtBrandIdentity522Test.kt
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
@@ -346,7 +365,7 @@ jobs:
           cp app/src/main/java/com/example/altyazi/Overlay.kt dist/source/
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-V521-Source-Inspection
+          name: GameLingoPro-V53-Source-Inspection
           path: dist/source
           if-no-files-found: error
       - uses: actions/setup-java@v5
@@ -386,7 +405,7 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-5.2.1-CleanQA
+          name: GameLingoPro-5.3-BrandAndDialogue
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Package complete tested 5.0 Android source tree
@@ -395,7 +414,7 @@ jobs:
           from pathlib import Path
           from zipfile import ZipFile, ZIP_DEFLATED
           root=Path('.')
-          output=Path('dist/GameLingoPro-5.2.1-Tam-Kaynak-Kodu.zip')
+          output=Path('dist/GameLingoPro-5.3-Tam-Kaynak-Kodu.zip')
           output.parent.mkdir(exist_ok=True,parents=True)
           source_dirs=['app/src','gradle/wrapper']
           source_files=[
@@ -421,7 +440,7 @@ jobs:
                       arc=p.as_posix()
                       if arc not in seen:z.write(p,arc);seen.add(arc)
               readme=(
-                'GameLingoPro 5.2.1 — TAM KAYNAK KODU\\n'
+                'GameLingoPro 5.3 — TAM KAYNAK KODU\\n'
                 'Bu arşiv CI tarafından patch zinciri uygulandıktan sonra oluşturuldu.\\n'
                 'Android kaynak: app/src/main/\\n'
                 'Birim testleri: app/src/test/\\n'
@@ -450,7 +469,7 @@ jobs:
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-5.2.1-Tam-Kaynak-Kodu
-          path: dist/GameLingoPro-5.2.1-Tam-Kaynak-Kodu.zip
+          name: GameLingoPro-5.3-Tam-Kaynak-Kodu
+          path: dist/GameLingoPro-5.3-Tam-Kaynak-Kodu.zip
           if-no-files-found: error
 
