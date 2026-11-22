@@ -189,6 +189,25 @@ rep('''    override fun onDestroy() {
         scope.cancel()
         releaseDisplay()''')
 
+# Existing regression tests correctly insist that spoken subtitles remain active
+# during maps/notices, but used a literal synchronous call as their probe.
+# Migrate their probe to the real V6 producer/consumer integration rather
+# than weakening the requirement or inserting a fake legacy source comment.
+old_tests=0
+for test_file in (root/"app/src/test/java/com/example/altyazi").glob("*Test.kt"):
+    original=test_file.read_text(encoding="utf-8")
+    updated=original.replace(
+        'contains("processSubtitle(full) // caption always has priority")',
+        'contains("v6Snapshots.trySend(sample)")'
+    ).replace(
+        'contains("processSubtitle(full)")',
+        'contains("processSubtitle(snapshot.bitmap, snapshot.epoch)")'
+    )
+    if updated != original:
+        test_file.write_text(updated,encoding="utf-8")
+        old_tests += 1
+assert old_tests == 13, f"Expected 13 literal wiring tests, got {old_tests}"
+
 assert "processSubtitle(full)" not in service.read_text()
 assert "v6Snapshots.trySend(sample)" in service.read_text()
 assert "v6Snapshots.cancel()" in service.read_text()
