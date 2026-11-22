@@ -24,7 +24,7 @@ replace(ocr,
         // Only retry when the last short token looks physically truncated.
         return GtOriginalInputGuard.looksClipped(s)''')
 replace(ocr,"const val EXPANDED_RETRY_COOLDOWN_MS = 1800L",
-        "const val EXPANDED_RETRY_COOLDOWN_MS = 2400L")
+        "const val EXPANDED_RETRY_COOLDOWN_MS = 1800L")
 
 guard=src/"GtOriginalInputGuard.kt"
 replace(guard,
@@ -102,8 +102,8 @@ class GtRealtime565Test {
     }
     @Test fun stillAllowGenuinelyClippedWordsWithCooldown() {
         val broken = "Wyman: if you wanna go, get yourselves another set of clo"
-        assertFalse(GtRealtimeOcrPolicy.shouldExpand(broken,2399L,false))
-        assertTrue(GtRealtimeOcrPolicy.shouldExpand(broken,2400L,false))
+        assertFalse(GtRealtimeOcrPolicy.shouldExpand(broken,1799L,false))
+        assertTrue(GtRealtimeOcrPolicy.shouldExpand(broken,1800L,false))
         assertFalse(GtRealtimeOcrPolicy.shouldExpand(broken,10000L,true))
     }
     @Test fun observedOcrBrokenTokensFixedOnlyInContext() {
