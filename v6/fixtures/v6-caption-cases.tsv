@@ -1,0 +1,44 @@
+# V6 regression corpus: short excerpts from user-provided game logs, plus synthetic overlap cases.
+# id<TAB>kind<TAB>raw<TAB>expected_candidate (empty strings allowed)
+D01	DIALOGUE	Lucia: What's up, Vicki?	Lucia: What's up, Vicki?
+D02	DIALOGUE	Vicki: Hey, y'all. You guys got a sec?	Vicki: Hey, y'all. You guys got a sec?
+D03	DIALOGUE	Jason: Sure.	Jason: Sure.
+D04	DIALOGUE	Lucia: Damn.	Lucia: Damn.
+D05	DIALOGUE	Vicki: Look, I know. Okay?	Vicki: Look, I know. Okay?
+D06	DIALOGUE	Vicki: and I know the code to his safe.	Vicki: and I know the code to his safe.
+D07	DIALOGUE	Vicki: Uh, five figures each... at least!	Vicki: Uh, five figures each... at least!
+D08	DIALOGUE	Jason: We'll think about it.	Jason: We'll think about it.
+D09	DIALOGUE	Local: Bitch, die!	Local: Bitch, die!
+D10	DIALOGUE	Local: Ah! You're hurting me! Stop!	Local: Ah! You're hurting me! Stop!
+D11	DIALOGUE	Staff Member: Hi there! Welcome!	Staff Member: Hi there! Welcome!
+D12	DIALOGUE	Staff Member: Thanks, babe.	Staff Member: Thanks, babe.
+D13	DIALOGUE	Vicki: We just need to wait for the right night,	Vicki: We just need to wait for the right night,
+D14	DIALOGUE	Jason: Hey! Kiss my ass!	Jason: Hey! Kiss my ass!
+D15	DIALOGUE	Jason: This your first time driving!?	Jason: This your first time driving!?
+D16	DIALOGUE	Locals: Let's go!	Locals: Let's go!
+D17	DIALOGUE	Clerk: Any recommendations?	Clerk: Any recommendations?
+D18	DIALOGUE	Beefslap: I'm in a hurry here!	Beefslap: I'm in a hurry here!
+D19	DIALOGUE	Billy: Yo, wait up.	Billy: Yo, wait up.
+D20	DIALOGUE	Vicki: Delight's could be big for all of us if we work together.	Vicki: Delight's could be big for all of us if we work together.
+H01	OBJECTIVE	Drive Beefslap to the race track	Drive Beefslap to the race track
+H02	OBJECTIVE	Buy a new outfit at the merch stall	Buy a new outfit at the merch stall
+H03	OBJECTIVE	Leave the store	Leave the store
+H04	OBJECTIVE	Help Lucia at the old hotel	Help Lucia at the old hotel
+H05	OBJECTIVE	Join Billy on a job	Join Billy on a job
+H06	OBJECTIVE	Steal vehicles for Moses	Steal vehicles for Moses
+H07	OBJECTIVE	Talk to Billy	Talk to Billy
+O01	OVERLAP	Vicki: Nice to see you. Jason: I'm listening.	Jason: I'm listening.
+O02	OVERLAP	you gon' see what tough is. Jason: Alright. So do something.	Jason: Alright. So do something.
+O03	OVERLAP	Local: Get out of the road. Jason: I'm gonna need this car.	Jason: I'm gonna need this car.
+O04	OVERLAP	Stranger: I'll look for you. Lucia: You'll see.	Lucia: You'll see.
+O05	OVERLAP	and she's literally immobile. Jason: Huh, really?	Jason: Huh, really?
+U01	UNLABELLED	Warning! This is a message for all Leonida tourists.	Warning! This is a message for all Leonida tourists.
+U02	UNLABELLED	Status Auto. Live life beyond.	Status Auto. Live life beyond.
+U03	UNLABELLED	STOLLSy	STOLLSy
+U04	UNLABELLED	they smell so good	they smell so good
+S01	SUSPECT	Wnen T net nis ass ne Was Jumping o TT ladders	Wnen T net nis ass ne Was Jumping o TT ladders
+S02	SUSPECT	Toychgs n Shat happened to your car?	Toychgs n Shat happened to your car?
+S03	SUSPECT	Bee TSlap: Ann, U Sn Ouida Seen tnat coming none Uy.	Bee TSlap: Ann, U Sn Ouida Seen tnat coming none Uy.
+E01	EMPTY		
+D21	DIALOGUE	Local:You're bein' a real fuckin' prick.	Local:You're bein' a real fuckin' prick.
+D22	DIALOGUE	Locals: 'Ey.. we got time to kill!	Locals: 'Ey.. we got time to kill!
