@@ -62,6 +62,17 @@ jobs:
           grep -q 'applicationId = "com.gamelingo.pro.stayfix"' app/build.gradle.kts
 
 
+      - name: Import exact GameTranslator v1.8.49 upstream Android sources
+        shell: bash
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse --branch v1.8.49 \
+            https://gitlab.com/sefflex/GameTranslator.git gt-upstream
+          git -C gt-upstream sparse-checkout set mobile/android/app/src/main/kotlin/com/gametranslator/gametranslator_mobile
+          python3 tools/integrate_gt_original_v1849.py gt-upstream .
+          test -f app/src/main/java/com/gametranslator/gametranslator_mobile/core/SubtitlePipeline.kt
+          grep -q 'com.gamelingo.pro.gt1849' app/build.gradle.kts
+          grep -q 'GameLingoPro-5.6.2-GTOriginal' app/build.gradle.kts
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -91,3 +102,25 @@ jobs:
 
       - name: Run JVM regression tests
         run: gradle :app:testDebugUnitTest --no-daemon
+
+      - name: Pack complete modified GameLingo source
+        shell: bash
+        if: success()
+        run: |
+          python3 - <<'PY'
+          import pathlib, zipfile
+          root=pathlib.Path('.')
+          with zipfile.ZipFile('GameLingoPro-5.6.2-GTOriginal-Kaynak.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              for base in ('app/src', 'app/build.gradle.kts', 'settings.gradle.kts',
+                           'build.gradle.kts', 'gradle.properties', 'tools/integrate_gt_original_v1849.py'):
+                  p=root/base
+                  for file in (p.rglob('*') if p.is_dir() else (p,)):
+                      if file.is_file(): z.write(file, file.as_posix())
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: GameLingoPro-5.6.2-GTOriginal-Kaynak
+          path: GameLingoPro-5.6.2-GTOriginal-Kaynak.zip
+          if-no-files-found: error
