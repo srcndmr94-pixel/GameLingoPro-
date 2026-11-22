@@ -1,9 +1,9 @@
-name: GameLingo V6 foundation tests + APK
+name: GameLingo V6 Core Architecture Pilot
 
 on:
   workflow_dispatch:
   push:
-    branches: [v6-foundation]
+    branches: [v6-core-engine]
     paths:
       - 'GameLingoPro-5.6.1-MapOCR-StayFix-Duzeltilmis-Kaynak.zip'
       - 'tools/gt563/**'
@@ -133,6 +133,12 @@ jobs:
           python3 v6/tools/apply_v6_capture.py
           grep -q 'onCapturedContentResize' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/v6/V6CaptureRecoveryTest.kt
+
+      - name: V6 core capture and OCR decoupled workers
+        run: |
+          python3 v6/tools/apply_v6_core.py
+          grep -q 'v6Snapshots.trySend(sample)' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/v6/V6FramePolicyTest.kt
 
       - name: Set monotonically increasing V6 test version
         run: |
