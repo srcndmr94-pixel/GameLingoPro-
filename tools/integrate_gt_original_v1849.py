@@ -174,11 +174,9 @@ st=re.sub(r'<string name="app_name">[^<]*</string>',
 strings.write_text(st)
 brand=project/'app/src/test/java/com/example/altyazi/GtBrandIdentity522Test.kt'
 bt=brand.read_text()
-bt=bt.replace('"<string name=\\\\\\"app_name\\\\\\">GameLingoPro StayFix</string>"',
-              '"<string name=\\\\\\"app_name\\\\\\">GameLingoPro GT Original</string>"')
-bt=bt.replace('"<string name=\\\\\\"app_name\\\\\\">GameLingoPro</string>"',
-              '"<string name=\\\\\\"app_name\\\\\\">GameLingoPro GT Original</string>"')
-bt=bt.replace('cbGoogle.text=\\\\\\"GameLingoPro · Google GTX','cbGoogle.text=\\\\\\"GameLingoPro · GameTranslator v1.8.49')
+bt=bt.replace('GameLingoPro StayFix</string>', 'GameLingoPro GT Original</string>')
+bt=bt.replace('GameLingoPro</string>', 'GameLingoPro GT Original</string>')
+bt=bt.replace('GameLingoPro · Google GTX', 'GameLingoPro · GameTranslator v1.8.49')
 brand.write_text(bt)
 assert "GtOriginalDialoguePipeline" in service.read_text()
 assert (target/'core/SubtitlePipeline.kt').read_bytes()==(original/'core/SubtitlePipeline.kt').read_bytes()
