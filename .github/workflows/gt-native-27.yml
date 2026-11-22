@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [fix/brand-identity-522]
+    branches: [fix/subtitle-priority-54]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -32,6 +32,8 @@ on:
       - 'tools/apply_gt_v521_clean_smoke.py'
       - 'tools/apply_gt_v522_brand_identity.py'
       - 'tools/apply_gt_v53_dialogue_from_log.py'
+      - 'tools/gt_v54_subtitle_priority.zlib.b64'
+      - 'tools/apply_gt_v54_subtitle_priority.py'
       - 'tools/ui51_patch.zlib.b64'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   pull_request:
@@ -57,6 +59,8 @@ on:
       - 'tools/apply_gt_v521_clean_smoke.py'
       - 'tools/apply_gt_v522_brand_identity.py'
       - 'tools/apply_gt_v53_dialogue_from_log.py'
+      - 'tools/gt_v54_subtitle_priority.zlib.b64'
+      - 'tools/apply_gt_v54_subtitle_priority.py'
       - 'tools/ui51_patch.zlib.b64'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   workflow_dispatch:
@@ -347,6 +351,16 @@ jobs:
           test -f app/src/main/assets/GameTranslator-NOTICE.txt
           test -f app/src/test/java/com/example/altyazi/GtUserDialogue53Test.kt
           test -f app/src/test/java/com/example/altyazi/GtBrandIdentity522Test.kt
+      - name: Make spoken subtitles independent of game map and notice regions
+        run: python3 tools/apply_gt_v54_subtitle_priority.py .
+      - name: Assert the 5.4 capture-priority and new OCR policy are active
+        run: |
+          grep -q 'GameLingoPro-5.4-SubtitlePriority' app/build.gradle.kts
+          grep -q 'processSubtitle(full) // caption always has priority' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'gameplayHint.containsMatchIn' app/src/main/java/com/example/altyazi/GtGameNotice.kt
+          test -f app/src/main/java/com/example/altyazi/GtCaptionScanPolicy54.kt
+          test -f app/src/test/java/com/example/altyazi/GtCaptionPriority54Test.kt
+          ! grep -q 'gtQuestBoxesOnly' app/src/main/java/com/example/altyazi/CaptureService.kt
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
@@ -365,7 +379,7 @@ jobs:
           cp app/src/main/java/com/example/altyazi/Overlay.kt dist/source/
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-V53-Source-Inspection
+          name: GameLingoPro-V54-Source-Inspection
           path: dist/source
           if-no-files-found: error
       - uses: actions/setup-java@v5
@@ -405,7 +419,7 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-5.3-BrandAndDialogue
+          name: GameLingoPro-5.4-SubtitlePriority
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Package complete tested 5.0 Android source tree
@@ -414,7 +428,7 @@ jobs:
           from pathlib import Path
           from zipfile import ZipFile, ZIP_DEFLATED
           root=Path('.')
-          output=Path('dist/GameLingoPro-5.3-Tam-Kaynak-Kodu.zip')
+          output=Path('dist/GameLingoPro-5.4-Tam-Kaynak-Kodu.zip')
           output.parent.mkdir(exist_ok=True,parents=True)
           source_dirs=['app/src','gradle/wrapper']
           source_files=[
@@ -440,7 +454,7 @@ jobs:
                       arc=p.as_posix()
                       if arc not in seen:z.write(p,arc);seen.add(arc)
               readme=(
-                'GameLingoPro 5.3 — TAM KAYNAK KODU\\n'
+                'GameLingoPro 5.4 — TAM KAYNAK KODU\\n'
                 'Bu arşiv CI tarafından patch zinciri uygulandıktan sonra oluşturuldu.\\n'
                 'Android kaynak: app/src/main/\\n'
                 'Birim testleri: app/src/test/\\n'
@@ -469,7 +483,7 @@ jobs:
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-5.3-Tam-Kaynak-Kodu
-          path: dist/GameLingoPro-5.3-Tam-Kaynak-Kodu.zip
+          name: GameLingoPro-5.4-Tam-Kaynak-Kodu
+          path: dist/GameLingoPro-5.4-Tam-Kaynak-Kodu.zip
           if-no-files-found: error
 
