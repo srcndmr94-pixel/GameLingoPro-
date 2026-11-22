@@ -18,6 +18,15 @@ class V6FramePolicyTest {
         assertFalse(V6FramePolicy.isFresh(2000L,1900L,7,7))
     }
 
+    @Test fun menuOcrIsRateLimitedIndependently() {
+        assertTrue(V6FramePolicy.shouldProbeMenu(1000L,0L,false,false))
+        assertFalse(V6FramePolicy.shouldProbeMenu(1300L,1000L,false,false))
+        assertTrue(V6FramePolicy.shouldProbeMenu(2500L,1000L,false,false))
+        assertFalse(V6FramePolicy.shouldProbeMenu(1300L,1000L,true,false))
+        assertTrue(V6FramePolicy.shouldProbeMenu(1500L,1000L,true,false))
+        assertFalse(V6FramePolicy.shouldProbeMenu(5000L,1000L,true,true))
+    }
+
     @Test fun atMostOneQueuedFrameIsAllowedByMailboxCapacity() {
         assertEquals(180L,V6FramePolicy.MIN_SNAPSHOT_GAP_MS)
         assertEquals(2400L,V6FramePolicy.MAX_FRAME_AGE_MS)
