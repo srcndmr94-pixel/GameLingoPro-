@@ -125,6 +125,18 @@ replace(strings,
         '<string name="app_name">GameLingoPro GT Fast</string>')
 brand=tests/'GtBrandIdentity522Test.kt'
 replace(brand,'GameLingoPro GT Fix</string>','GameLingoPro GT Fast</string>')
+# Normalize the exact Kotlin declaration; a triple-quoted Python delimiter
+# can otherwise leave a stray double quote on the generated last line.
+lines=cap.read_text(encoding='utf-8').splitlines()
+for i, line in enumerate(lines):
+    if 'private var gtRealtimeLastOcrDurationMs' in line:
+        lines[i]='    @Volatile private var gtRealtimeLastOcrDurationMs: Long = 0L'
+cap.write_text('\\n'.join(lines) + '\\n', encoding='utf-8')
+check=next(line for line in cap.read_text().splitlines()
+           if 'private var gtRealtimeLastOcrDurationMs' in line)
+assert check == '    @Volatile private var gtRealtimeLastOcrDurationMs: Long = 0L', repr(check)
+print('Validated Kotlin field:',repr(check))
+
 assert (src/'GtOriginalDialoguePipeline.kt').is_file()
 assert (root/'app/src/main/java/com/gametranslator/gametranslator_mobile/core/SubtitlePipeline.kt').is_file()
 print('Applied GameLingoPro 5.6.4 latency improvements; upstream GameTranslator unchanged.')
