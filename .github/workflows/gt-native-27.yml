@@ -1,7 +1,7 @@
 name: GameLingoPro Native GT Engine and Subtitle Style
 on:
   push:
-    branches: [fix/map-translation-stay-55]
+    branches: [fix/map-translation-stay-55, fix/mapstay-56-regression-10x]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v27_engine.py'
@@ -37,10 +37,12 @@ on:
       - 'tools/gt_v55_sticky_map.zlib.b64'
       - 'tools/apply_gt_v55_sticky_map.py'
       - 'tools/apply_gt_v55_pause_exit_test_fix.py'
+      - 'tools/apply_gt_v56_exit_dialogue.py'
+      - 'tools/GtMapExit56Test.kt'
       - 'tools/ui51_patch.zlib.b64'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   pull_request:
-    branches: [main]
+    branches: [main, fix/map-translation-stay-55]
     paths:
       - '.github/workflows/gt-native-27.yml'
       - 'tools/apply_gt_v31_menus.py'
@@ -67,6 +69,8 @@ on:
       - 'tools/gt_v55_sticky_map.zlib.b64'
       - 'tools/apply_gt_v55_sticky_map.py'
       - 'tools/apply_gt_v55_pause_exit_test_fix.py'
+      - 'tools/apply_gt_v56_exit_dialogue.py'
+      - 'tools/GtMapExit56Test.kt'
       - 'tools/ui51_patch.zlib.b64'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   workflow_dispatch:
@@ -380,6 +384,18 @@ jobs:
           grep -q 'if(gtMapPanelMode && !prefs.mapKeepVisible)' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtMapStay55Test.kt
           ! grep -q 'gtQuestBoxesOnly' app/src/main/java/com/example/altyazi/CaptureService.kt
+      - name: Apply 5.6 map exit, persistent objectives and dialogue repair
+        run: |
+          python3 tools/apply_gt_v56_exit_dialogue.py .
+          cp tools/GtMapExit56Test.kt app/src/test/java/com/example/altyazi/GtMapExit56Test.kt
+      - name: Verify 10 independent new regressions and original engine identity
+        run: |
+          grep -q 'GameLingoPro-5.6-MapExitQA' app/build.gradle.kts
+          grep -q 'differentScreen || visualExit' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'gtMapVisualReference56=visual56' app/src/main/java/com/example/altyazi/CaptureService.kt
+          grep -q 'GoogleGtxTranslator' app/src/main/java/com/example/altyazi/GtNativeEngine.kt
+          test -s app/src/test/java/com/example/altyazi/GtMapExit56Test.kt
+          test "$(grep -c '@Test fun ' app/src/test/java/com/example/altyazi/GtMapExit56Test.kt)" -eq 10
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
@@ -438,7 +454,7 @@ jobs:
           "$signer" verify app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-5.5-MapStay
+          name: GameLingoPro-5.6-MapExitQA
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Package complete tested 5.0 Android source tree
@@ -447,7 +463,7 @@ jobs:
           from pathlib import Path
           from zipfile import ZipFile, ZIP_DEFLATED
           root=Path('.')
-          output=Path('dist/GameLingoPro-5.5-Tam-Kaynak-Kodu.zip')
+          output=Path('dist/GameLingoPro-5.6-Tam-Kaynak-Kodu.zip')
           output.parent.mkdir(exist_ok=True,parents=True)
           source_dirs=['app/src','gradle/wrapper']
           source_files=[
@@ -502,7 +518,7 @@ jobs:
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-5.5-Tam-Kaynak-Kodu
-          path: dist/GameLingoPro-5.5-Tam-Kaynak-Kodu.zip
+          name: GameLingoPro-5.6-Tam-Kaynak-Kodu
+          path: dist/GameLingoPro-5.6-Tam-Kaynak-Kodu.zip
           if-no-files-found: error
 
