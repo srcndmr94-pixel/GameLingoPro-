@@ -1,4 +1,4 @@
-name: GameLingoPro 5.6.6 GTStableFast APK
+name: GameLingoPro 5.6.7 GTDialogueFix APK
 
 on:
   workflow_dispatch:
@@ -12,6 +12,7 @@ on:
       - 'tools/apply_gt_original_564.py'
       - 'tools/apply_gt_original_565.py'
       - 'tools/apply_gt_original_566.py'
+      - 'tools/apply_gt_original_567.py'
       - '.github/workflows/android.yml'
 
 permissions:
@@ -106,6 +107,12 @@ jobs:
           grep -q 'versionName = "GameLingoPro-5.6.6-GTStableFast"' app/build.gradle.kts
           test -f app/src/test/java/com/example/altyazi/GtRealtime566Test.kt
 
+      - name: Apply 5.6.7 dialogue boundary and latency correlation fixes
+        run: |
+          python3 tools/apply_gt_original_567.py
+          grep -q 'versionName = "GameLingoPro-5.6.7-GTDialogueFix"' app/build.gradle.kts
+          test -f app/src/test/java/com/example/altyazi/GtRealtime567Test.kt
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -129,7 +136,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-5.6.6-GTStableFast-APK
+          name: GameLingoPro-5.6.7-GTDialogueFix-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -143,12 +150,12 @@ jobs:
           python3 - <<'PY'
           import pathlib, zipfile
           root=pathlib.Path('.')
-          with zipfile.ZipFile('GameLingoPro-5.6.6-GTStableFast-Kaynak.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+          with zipfile.ZipFile('GameLingoPro-5.6.7-GTDialogueFix-Kaynak.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
               for base in ('app/src', 'app/build.gradle.kts', 'settings.gradle.kts',
                            'build.gradle.kts', 'gradle.properties', 'tools/integrate_gt_original_v1849.py',
                            'tools/apply_gt_original_563.py', 'tools/gt563',
                            'tools/apply_gt_original_564.py', 'tools/gt564',
-                           'tools/apply_gt_original_565.py', 'tools/apply_gt_original_566.py'):
+                           'tools/apply_gt_original_565.py', 'tools/apply_gt_original_566.py', 'tools/apply_gt_original_567.py'):
                   p=root/base
                   for file in (p.rglob('*') if p.is_dir() else (p,)):
                       if file.is_file(): z.write(file, file.as_posix())
@@ -157,6 +164,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: GameLingoPro-5.6.6-GTStableFast-Kaynak
-          path: GameLingoPro-5.6.6-GTStableFast-Kaynak.zip
+          name: GameLingoPro-5.6.7-GTDialogueFix-Kaynak
+          path: GameLingoPro-5.6.7-GTDialogueFix-Kaynak.zip
           if-no-files-found: error
