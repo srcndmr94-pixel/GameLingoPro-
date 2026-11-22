@@ -180,6 +180,15 @@ rep('''        if (gtOriginalDialogueDelegate.isInitialized()) gtOriginalDialogu
         v6Snapshots.cancel()
         running = false''')
 
+# System-initiated service teardown must also release pending snapshots.
+# ACTION_STOP normally calls stopEverything, but Android may call onDestroy directly.
+rep('''    override fun onDestroy() {
+        releaseDisplay()''',
+'''    override fun onDestroy() {
+        v6Snapshots.cancel()
+        scope.cancel()
+        releaseDisplay()''')
+
 assert "processSubtitle(full)" not in service.read_text()
 assert "v6Snapshots.trySend(sample)" in service.read_text()
 assert "v6Snapshots.cancel()" in service.read_text()
