@@ -1,9 +1,9 @@
-name: GameLingoPro 5.6.8 GTQuality APK
+name: GameLingo V6 foundation tests + APK
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [v6-foundation]
     paths:
       - 'GameLingoPro-5.6.1-MapOCR-StayFix-Duzeltilmis-Kaynak.zip'
       - 'tools/gt563/**'
@@ -15,6 +15,7 @@ on:
       - 'tools/apply_gt_original_567.py'
       - 'tools/apply_gt_original_568.py'
       - 'tools/gt568/**'
+      - 'v6/**'
       - '.github/workflows/android.yml'
 
 permissions:
@@ -121,6 +122,26 @@ jobs:
           grep -q 'versionName = "GameLingoPro-5.6.8-GTQuality"' app/build.gradle.kts
           test -f app/src/test/java/com/example/altyazi/GtRealtime568Test.kt
 
+      - name: V6 foundation shadow quality boundaries and golden corpus
+        run: |
+          python3 v6/tools/apply_v6_foundation.py
+          grep -q 'applicationId = "com.gamelingo.pro.v6test"' app/build.gradle.kts
+          test -f app/src/test/resources/v6-caption-cases.tsv
+
+      - name: Set monotonically increasing V6 test version
+        run: |
+          python3 - <<'PY'
+          import os,pathlib
+          gradle=pathlib.Path("app/build.gradle.kts")
+          code=600000+int(os.environ["GITHUB_RUN_NUMBER"])
+          s=gradle.read_text()
+          assert "versionCode = 600001" in s and 'versionName = "6.0.0-alpha.1"' in s
+          s=s.replace("versionCode = 600001",f"versionCode = {code}")
+          s=s.replace('versionName = "6.0.0-alpha.1"',f'versionName = "6.0.0-alpha.{os.environ["GITHUB_RUN_NUMBER"]}"')
+          gradle.write_text(s)
+          print("GameLingo V6 test build",code)
+          PY
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -130,13 +151,12 @@ jobs:
         with:
           gradle-version: '8.13'
 
-      - name: Generate standalone debug signing key
+      - name: Restore fixed V6 test-only signing key
         shell: bash
         run: |
-          keytool -genkeypair -noprompt -keystore app/debug.keystore -storetype JKS \
-            -storepass android -keypass android -alias androiddebugkey \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=GameLingoPro Debug,O=Android,C=US"
+          base64 --decode v6/signing/v6-debug.jks.b64 > app/debug.keystore
+          echo '1685196779fd8026a5b4fd8fa9c0959978896ce6d7500f4c362a243e45f81e50  app/debug.keystore' | sha256sum -c -
+          keytool -list -keystore app/debug.keystore -storepass android -alias androiddebugkey >/dev/null
 
       - name: Build APK
         run: gradle :app:assembleDebug --no-daemon --stacktrace
@@ -144,11 +164,11 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: GameLingoPro-5.6.8-GTQuality-APK
+          name: GameLingo-V6-Test-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-      - name: Run JVM regression tests
+      - name: Run JVM regression tests (including V6 golden cases)
         run: gradle :app:testDebugUnitTest --no-daemon
 
       - name: Pack complete modified GameLingo source
@@ -158,13 +178,13 @@ jobs:
           python3 - <<'PY'
           import pathlib, zipfile
           root=pathlib.Path('.')
-          with zipfile.ZipFile('GameLingoPro-5.6.8-GTQuality-Kaynak.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+          with zipfile.ZipFile('GameLingo-V6-Foundation-Kaynak.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
               for base in ('app/src', 'app/build.gradle.kts', 'settings.gradle.kts',
                            'build.gradle.kts', 'gradle.properties', 'tools/integrate_gt_original_v1849.py',
                            'tools/apply_gt_original_563.py', 'tools/gt563',
                            'tools/apply_gt_original_564.py', 'tools/gt564',
                            'tools/apply_gt_original_565.py', 'tools/apply_gt_original_566.py', 'tools/apply_gt_original_567.py',
-                           'tools/apply_gt_original_568.py', 'tools/gt568'):
+                           'tools/apply_gt_original_568.py', 'tools/gt568', 'v6'):
                   p=root/base
                   for file in (p.rglob('*') if p.is_dir() else (p,)):
                       if file.is_file(): z.write(file, file.as_posix())
@@ -173,6 +193,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: GameLingoPro-5.6.8-GTQuality-Kaynak
-          path: GameLingoPro-5.6.8-GTQuality-Kaynak.zip
+          name: GameLingo-V6-Foundation-Kaynak
+          path: GameLingo-V6-Foundation-Kaynak.zip
           if-no-files-found: error
