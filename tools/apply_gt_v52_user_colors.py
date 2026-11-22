@@ -142,7 +142,7 @@ test.write_text(old[:a]+new+old[b:],encoding='utf-8')
 
 # Existing 5.0 regressions check old fixed headings and custom styles;
 # update assertions to verify role distinction with selected user colors.
-for name in ('GtCornerNotice50Test.kt','GtObservedLog49Test.kt','GtColorsAllTranslation47Test.kt'):
+for name in ('GtCornerNotice50Test.kt','GtObservedLog49Test.kt','GtColorsAllTranslation47Test.kt','GtDialogueQuality48Test.kt'):
     f=tests/name
     old=f.read_text(encoding='utf8')
     old=old.replace(
@@ -154,10 +154,16 @@ for name in ('GtCornerNotice50Test.kt','GtObservedLog49Test.kt','GtColorsAllTran
     old=old.replace(
         'renderer.contains("Color.rgb(105,232,242)")',
         'renderer.contains("tv.setTextColor(style.yaziRengi)")')
+    old=old.replace(
+        'render.contains("Color.rgb(255,203,86)")',
+        'render.contains("if(card.questHeading)Typeface.BOLD else Typeface.NORMAL")')
+    old=old.replace(
+        'render.contains("Color.rgb(105,232,242)")',
+        'render.contains("tv.setTextColor(style.yaziRengi)")')
     f.write_text(old,encoding='utf8')
 # 4.7-era color tests were not the only old static-color assumptions.
 for f in tests.glob('*.kt'):
-    if f.name in ('GtColorsAllTranslation47Test.kt','GtObservedLog49Test.kt','GtCornerNotice50Test.kt'):
+    if f.name in ('GtColorsAllTranslation47Test.kt','GtObservedLog49Test.kt','GtCornerNotice50Test.kt','GtDialogueQuality48Test.kt'):
         continue
     content=f.read_text(encoding='utf8')
     for value in ('Color.rgb(255,203,86)','Color.rgb(105,232,242)',
