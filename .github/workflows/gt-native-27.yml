@@ -332,3 +332,68 @@ jobs:
           name: GameLingoPro-5.0-MapNoticeStability
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      - name: Package complete tested 5.0 Android source tree
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+          root=Path('.')
+          output=Path('dist/GameLingoPro-5.0-Tam-Kaynak-Kodu.zip')
+          output.parent.mkdir(exist_ok=True,parents=True)
+          source_dirs=['app/src','gradle/wrapper']
+          source_files=[
+              'app/build.gradle.kts','app/proguard-rules.pro',
+              'build.gradle.kts','settings.gradle.kts','gradle.properties',
+              'gradlew','gradlew.bat','.github/workflows/gt-native-27.yml',
+          ]
+          patch_dirs=['tools']
+          with ZipFile(output,'w',compression=ZIP_DEFLATED,compresslevel=6) as z:
+              seen=set()
+              for directory in source_dirs:
+                  for p in sorted(Path(directory).rglob('*')):
+                      if p.is_file() and p.suffix not in {'.apk','.aab','.class'}:
+                          arc=p.as_posix()
+                          if arc not in seen:z.write(p,arc);seen.add(arc)
+              for path in source_files:
+                  p=Path(path)
+                  if p.is_file() and p.as_posix() not in seen:
+                      z.write(p,p.as_posix());seen.add(p.as_posix())
+              for p in sorted(Path('tools').rglob('*')):
+                  if p.is_file() and (p.suffix in {'.py','.b64','.md','.txt'} or
+                                      p.name=='GameLingoPro-2.5-Source-Patch.zip'):
+                      arc=p.as_posix()
+                      if arc not in seen:z.write(p,arc);seen.add(arc)
+              readme=(
+                'GameLingoPro 5.0 — TAM KAYNAK KODU\\n'
+                'Bu arşiv CI tarafından patch zinciri uygulandıktan sonra oluşturuldu.\\n'
+                'Android kaynak: app/src/main/\\n'
+                'Birim testleri: app/src/test/\\n'
+                'Derleme dosyalari: *.gradle.kts, gradle.properties\\n'
+                'Kaynak yamalari: tools/\\n'
+                'Google GTX -> ML Kit, uygulama kimligi com.gamelingo.pro.\\n'
+                'Derlenmis APK bu pakette yer almaz.\\n'
+              )
+              z.writestr('KAYNAK-README.txt',readme)
+          with ZipFile(output) as z:
+              names=set(z.namelist())
+              needed={
+                  'app/src/main/java/com/example/altyazi/CaptureService.kt',
+                  'app/src/main/java/com/example/altyazi/GtExactOverlay.kt',
+                  'app/src/main/java/com/example/altyazi/GtMapMotion50.kt',
+                  'app/src/main/java/com/example/altyazi/GtGameNotice.kt',
+                  'app/src/main/java/com/example/altyazi/GtDialogueQuality.kt',
+                  'app/src/test/java/com/example/altyazi/GtMapMotion50Test.kt',
+                  'app/src/test/java/com/example/altyazi/GtCornerNotice50Test.kt',
+                  'app/src/main/AndroidManifest.xml',
+                  'app/build.gradle.kts'
+              }
+              missing=needed-names
+              if missing:raise SystemExit('Missing full source files: '+str(missing))
+              print('Complete source validated:',len(names),'files,',output.stat().st_size,'bytes')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameLingoPro-5.0-Tam-Kaynak-Kodu
+          path: dist/GameLingoPro-5.0-Tam-Kaynak-Kodu.zip
+          if-no-files-found: error
+
