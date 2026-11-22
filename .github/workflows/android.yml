@@ -128,6 +128,12 @@ jobs:
           grep -q 'applicationId = "com.gamelingo.pro.v6test"' app/build.gradle.kts
           test -f app/src/test/resources/v6-caption-cases.tsv
 
+      - name: V6 safe MediaProjection capture and ImageReader recovery
+        run: |
+          python3 v6/tools/apply_v6_capture.py
+          grep -q 'onCapturedContentResize' app/src/main/java/com/example/altyazi/CaptureService.kt
+          test -f app/src/test/java/com/example/altyazi/v6/V6CaptureRecoveryTest.kt
+
       - name: Set monotonically increasing V6 test version
         run: |
           python3 - <<'PY'
