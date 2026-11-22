@@ -26,6 +26,7 @@ on:
       - 'tools/apply_gt_v49_alert_slang.py'
       - 'tools/apply_gt_v50_stable_map.py'
       - 'tools/apply_gt_v50_corner_visual.py'
+      - 'tools/apply_gt_v50_test_alignment.py'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   pull_request:
     branches: [main]
@@ -44,6 +45,7 @@ on:
       - 'tools/apply_gt_v49_alert_slang.py'
       - 'tools/apply_gt_v50_stable_map.py'
       - 'tools/apply_gt_v50_corner_visual.py'
+      - 'tools/apply_gt_v50_test_alignment.py'
       - 'tools/gt_v44_rect_overlay.zlib.b64'
   workflow_dispatch:
 permissions:
@@ -285,6 +287,8 @@ jobs:
           ! grep -q 'gtQuestBoxesOnly' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/GtMapMotion50Test.kt
           test -f app/src/test/java/com/example/altyazi/GtCornerNotice50Test.kt
+      - name: Adapt existing geometry and color tests to new stricter source-masked layout
+        run: python3 tools/apply_gt_v50_test_alignment.py
       - name: Archive active GameLingoPro source for geometry validation
         run: |
           mkdir -p dist/source
