@@ -51,6 +51,13 @@ jobs:
           t=strings.read_text()
           assert '<string name="app_name">GameLingoPro</string>' in t
           strings.write_text(t.replace('<string name="app_name">GameLingoPro</string>', '<string name="app_name">GameLingoPro StayFix</string>'))
+          # The UI-brand regression test must expect the variant's actual label.
+          brand_test=Path("app/src/test/java/com/example/altyazi/GtBrandIdentity522Test.kt")
+          content=brand_test.read_text()
+          expected='assertTrue(strings.contains("<string name=\\\"app_name\\\">GameLingoPro</string>"))'
+          updated='assertTrue(strings.contains("<string name=\\\"app_name\\\">GameLingoPro StayFix</string>"))'
+          assert content.count(expected) == 1, "Expected brand-name assertion missing"
+          brand_test.write_text(content.replace(expected, updated, 1))
           PY
           grep -q 'applicationId = "com.gamelingo.pro.stayfix"' app/build.gradle.kts
 
