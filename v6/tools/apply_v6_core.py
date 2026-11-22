@@ -139,6 +139,39 @@ rep('''        sonOcrMs = android.os.SystemClock.elapsedRealtime() - ocrBasi
         if (epoch != v6Epoch.get() || v6ProjectionStopped) return
         if (text.isNotBlank()) diagText++''')
 
+
+# V6 OCR scheduling: independent cadence so menu scanning cannot starve subtitles.
+rep('''            var v6LastSnapshotMs = 0L''',
+'''            var v6LastSnapshotMs = 0L
+            var v6LastMenuScanMs = 0L''')
+rep('''                    if (!isTv &&
+                        (gtMapPanelMode || gtNoticeMode || cycle % MENU_EVERY == 0L) &&
+                        menuJob?.isActive != true) {''',
+'''                    if (!isTv &&
+                        com.example.altyazi.v6.V6FramePolicy.shouldProbeMenu(
+                            nowMs, v6LastMenuScanMs,
+                            gtMapPanelMode || gtNoticeMode, menuJob?.isActive == true) &&
+                        (gtMapPanelMode || gtNoticeMode || cycle % MENU_EVERY == 0L)) {''')
+rep('''                        if (copy != null) menuJob = scope.launch {''',
+'''                        if (copy != null) {
+                            v6LastMenuScanMs = nowMs
+                            menuJob = scope.launch {''')
+rep('''                            } finally {
+                                copy.recycle()
+                            }
+                        }
+                    }
+
+                    cycle++''',
+'''                            } finally {
+                                copy.recycle()
+                            }
+                            }
+                        }
+                    }
+
+                    cycle++''')
+
 rep('''        if (gtOriginalDialogueDelegate.isInitialized()) gtOriginalDialogueDelegate.value.shutdown()
         running = false''',
 '''        if (gtOriginalDialogueDelegate.isInitialized()) gtOriginalDialogueDelegate.value.shutdown()
