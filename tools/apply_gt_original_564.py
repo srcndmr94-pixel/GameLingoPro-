@@ -56,6 +56,9 @@ replace(cap,
                                 " · " + source.take(55))
                         }""")
 replace(cap,
+"""    private val gtOriginalDialogueDelegate = lazy {""",
+"""    private val gtOriginalDialogueDelegate: Lazy<GtOriginalDialoguePipeline> = lazy {""")
+replace(cap,
 """        gtOriginalCurrentOcr = usable
         gtOriginalDialogueDelegate.value.onOcrText(usable)""",
 """        gtOriginalCurrentOcr = usable
