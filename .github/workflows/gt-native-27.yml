@@ -283,7 +283,7 @@ jobs:
         run: python3 tools/apply_gt_v50_corner_visual.py .
       - name: Assert all five requested functions remain enabled
         run: |
-          grep -q 'GameLingoPro-5.1-CleanProfessionalUI' app/build.gradle.kts
+          grep -q 'GameLingoPro-5.0-MapNoticeStability' app/build.gradle.kts
           grep -q 'GtMapMotion50.newBody' app/src/main/java/com/example/altyazi/CaptureService.kt
           grep -q 'val right=valid.filter' app/src/main/java/com/example/altyazi/GtGameNotice.kt
           grep -q 'if(!gtMapPanelMode)processSubtitle(full)' app/src/main/java/com/example/altyazi/CaptureService.kt
