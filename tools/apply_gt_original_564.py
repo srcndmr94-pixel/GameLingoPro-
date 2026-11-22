@@ -38,8 +38,8 @@ replace(cap,
 replace(cap,
 """    @Volatile private var gtOriginalCurrentOcr = """"",
 """    @Volatile private var gtOriginalCurrentOcr = ""
-    @Volatile private var gtRealtimeLastOcrStartMs = 0L
-    @Volatile private var gtRealtimeLastOcrDurationMs = 0L""")
+    @Volatile private var gtRealtimeLastOcrStartMs: Long = 0L
+    @Volatile private var gtRealtimeLastOcrDurationMs: Long = 0L""")
 replace(cap,
 """                        publish(source, GtOriginalQualityGuard.polish(source, translated),
                             remember = false, tag = " · GT ORİJİNAL")""",
@@ -68,7 +68,7 @@ replace(pipeline,
         Thread(r, "gt-original-translate")
     }""",
 """    private val queueWaitMs = ThreadLocal<Long>()
-    private val worker = GtLatestFirstExecutor { waitMs -> queueWaitMs.set(waitMs) }
+    private val worker = GtLatestFirstExecutor(onStart = { waitMs: Long -> queueWaitMs.set(waitMs) })
     private val latency = GtLatencyMeter { android.os.SystemClock.elapsedRealtime() }""")
 replace(pipeline,
 """    private val speakerSafeTranslator = TextTranslator { input ->
