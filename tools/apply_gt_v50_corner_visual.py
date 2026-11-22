@@ -49,8 +49,8 @@ once(notice,
                 if(rows.size==5)break
             }
             val body=rows.joinToString(" "){it.text.trim()}
-            val cornerCue=Regex("""(?i)\\b(?:objective|mission|new|reward|complete|
-                available|collect|meet|drive|reach|find|go|take|delivered)\\b""",
+            val cornerCue=Regex("""(?i)\b(?:objective|mission|new|reward|complete|
+                available|collect|meet|drive|reach|find|go|take|delivered)\b""",
                 RegexOption.COMMENTS)
             if(body.length>=25 && (gameEnglish(body) ||
                     cornerCue.containsMatchIn(body)) &&
