@@ -27,6 +27,21 @@ class V6FramePolicyTest {
         assertFalse(V6FramePolicy.shouldProbeMenu(5000L,1000L,true,true))
     }
 
+    @Test fun realCoroutineMailboxKeepsOnlyNewestPendingFrame() =
+        kotlinx.coroutines.runBlocking {
+            val dropped=mutableListOf<Int>()
+            val mailbox=kotlinx.coroutines.channels.Channel<Int>(
+                kotlinx.coroutines.channels.Channel.CONFLATED,
+                onUndeliveredElement={ dropped.add(it) }
+            )
+            mailbox.trySend(101)
+            mailbox.trySend(102)
+            mailbox.trySend(103)
+            assertEquals(103,mailbox.receive())
+            assertEquals(listOf(101,102),dropped)
+            mailbox.cancel()
+        }
+
     @Test fun atMostOneQueuedFrameIsAllowedByMailboxCapacity() {
         assertEquals(180L,V6FramePolicy.MIN_SNAPSHOT_GAP_MS)
         assertEquals(2400L,V6FramePolicy.MAX_FRAME_AGE_MS)
