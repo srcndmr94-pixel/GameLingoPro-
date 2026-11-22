@@ -37,6 +37,24 @@ jobs:
           grep -q 'versionName = "GameLingoPro-5.6.1-MapOCR-StayFix"' app/build.gradle.kts
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
 
+      - name: Create side-by-side install variant (preserve old app)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          gradle = Path("app/build.gradle.kts")
+          s=gradle.read_text()
+          old='applicationId = "com.gamelingo.pro"'
+          assert s.count(old) == 1, "Unexpected original application ID"
+          gradle.write_text(s.replace(old,'applicationId = "com.gamelingo.pro.stayfix"',1))
+          strings=Path("app/src/main/res/values/strings.xml")
+          t=strings.read_text()
+          assert '<string name="app_name">GameLingoPro</string>' in t
+          strings.write_text(t.replace('<string name="app_name">GameLingoPro</string>', '<string name="app_name">GameLingoPro StayFix</string>'))
+          PY
+          grep -q 'applicationId = "com.gamelingo.pro.stayfix"' app/build.gradle.kts
+
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
