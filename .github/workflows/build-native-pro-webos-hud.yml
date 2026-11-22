@@ -1,7 +1,7 @@
 name: GameLingoPro - Original Android + webOS HUD
 on:
   push:
-    branches: [main, feature/native-app-webos-hud]
+    branches: [main, feature/native-app-webos-hud, feature/menu-sticky-overlay]
     paths:
       - '.github/workflows/build-native-pro-webos-hud.yml'
       - 'tools/apply_native_gamelingopro_webos_hud.py'
@@ -40,6 +40,17 @@ jobs:
           test -f app/src/main/java/com/example/altyazi/PhoneBridge.kt
           test -f app/src/main/java/com/example/altyazi/MainActivity.kt
           grep -q 'applicationId = "com.gamelingo.pro"' app/build.gradle.kts
+      - name: Inspect menu overlay lifecycle for sticky menu fix
+        shell: bash
+        run: |
+          echo '=== Menu key and OCR ==='
+          grep -n -C 23 'lastMenuKey' app/src/main/java/com/example/altyazi/CaptureService.kt | head -n 210
+          echo '=== Overlay label manager ==='
+          grep -n -A 100 -B 20 'fun setLabels' app/src/main/java/com/example/altyazi/Overlay.kt | head -n 180
+          echo '=== Overlay label expiry ==='
+          grep -n -A 60 -B 10 'fun clearLabels' app/src/main/java/com/example/altyazi/Overlay.kt | head -n 110
+          echo '=== Settings XML ==='
+          grep -n -C 8 'ayarMenu' app/src/main/res/layout/activity_main.xml | head -n 70
       - name: Preserve Pro colors and settings layout
         run: python3 tools/apply_pro_brand.py
       - name: Install optional neon button sounds
