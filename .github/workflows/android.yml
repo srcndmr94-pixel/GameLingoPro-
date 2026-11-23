@@ -1,9 +1,9 @@
-name: GameLingo V6 Android Stability Test
+name: GameLingo V6 Realtime Lab
 
 on:
   workflow_dispatch:
   push:
-    branches: [v6-core-engine, fix/v6-android-stability-20261123]
+    branches: [v6-core-engine, fix/v6-android-stability-20261123, fix/v6-realtime-lab-20261123]
     paths:
       - 'GameLingoPro-5.6.1-MapOCR-StayFix-Duzeltilmis-Kaynak.zip'
       - 'tools/gt563/**'
@@ -184,6 +184,31 @@ jobs:
                   p.write_text(text.replace('GameLingo V6 Test</string>','GameLingo V6 Stabilite</string>'))
           PY
 
+      - name: Install tested fast OCR + source-locked dialogue corrections
+        run: |
+          python3 v6/tools/apply_v6_realtime.py
+          test -f app/src/test/java/com/example/altyazi/v6/V6RealtimePatchTest.kt
+          grep -q 'V6RealtimePolicy.targetWidth' app/src/main/java/com/example/altyazi/CaptureService.kt
+
+      - name: Use separate REALTIME LAB package ID (not Alpha.77)
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('app/build.gradle.kts')
+          s=b.read_text()
+          a='applicationId = "com.gamelingo.pro.v6stability"'
+          assert s.count(a)==1
+          b.write_text(s.replace(a,'applicationId = "com.gamelingo.pro.v6realtimelab"'))
+          labels=Path("app/src/main/res/values/strings.xml")
+          t=labels.read_text()
+          assert 'GameLingo V6 Stabilite</string>' in t
+          labels.write_text(t.replace('GameLingo V6 Stabilite</string>','GameLingo V6 Hız Denemesi</string>'))
+          for p in Path('app/src/test').rglob('*.kt'):
+              t=p.read_text()
+              if 'GameLingo V6 Stabilite</string>' in t:
+                  p.write_text(t.replace('GameLingo V6 Stabilite</string>','GameLingo V6 Hız Denemesi</string>'))
+          PY
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -206,7 +231,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: GameLingo-V6-Android-Stability-APK
+          name: GameLingo-V6-Realtime-Lab-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -220,7 +245,7 @@ jobs:
           python3 - <<'PY'
           import pathlib, zipfile
           root=pathlib.Path('.')
-          with zipfile.ZipFile('GameLingo-V6-Android-Stability-Kaynak.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+          with zipfile.ZipFile('GameLingo-V6-Realtime-Lab-Kaynak.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
               for base in ('app/src', 'app/build.gradle.kts', 'settings.gradle.kts',
                            'build.gradle.kts', 'gradle.properties', 'tools/integrate_gt_original_v1849.py',
                            'tools/apply_gt_original_563.py', 'tools/gt563',
@@ -235,6 +260,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: GameLingo-V6-Android-Stability-Kaynak
-          path: GameLingo-V6-Android-Stability-Kaynak.zip
+          name: GameLingo-V6-Realtime-Lab-Kaynak
+          path: GameLingo-V6-Realtime-Lab-Kaynak.zip
           if-no-files-found: error
