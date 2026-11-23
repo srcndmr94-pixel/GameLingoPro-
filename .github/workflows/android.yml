@@ -1,9 +1,9 @@
-name: GameLingo V6 Core Architecture Pilot
+name: GameLingo V6 Android Stability Test
 
 on:
   workflow_dispatch:
   push:
-    branches: [v6-core-engine]
+    branches: [v6-core-engine, fix/v6-android-stability-20261123]
     paths:
       - 'GameLingoPro-5.6.1-MapOCR-StayFix-Duzeltilmis-Kaynak.zip'
       - 'tools/gt563/**'
@@ -140,6 +140,12 @@ jobs:
           grep -q 'v6Snapshots.trySend(sample)' app/src/main/java/com/example/altyazi/CaptureService.kt
           test -f app/src/test/java/com/example/altyazi/v6/V6FramePolicyTest.kt
 
+      - name: Bound OCR heap use and repeat failures
+        run: |
+          python3 v6/tools/apply_v6_stability.py
+          test -f app/src/test/java/com/example/altyazi/v6/V6StabilityPolicyTest.kt
+          grep -q 'V6StabilityPolicy.canCopyFrame' app/src/main/java/com/example/altyazi/CaptureService.kt
+
       - name: Set monotonically increasing V6 test version
         run: |
           python3 - <<'PY'
@@ -152,6 +158,30 @@ jobs:
           s=s.replace('versionName = "6.0.0-alpha.1"',f'versionName = "6.0.0-alpha.{os.environ["GITHUB_RUN_NUMBER"]}"')
           gradle.write_text(s)
           print("GameLingo V6 test build",code)
+          PY
+
+      - name: Keep current V6 APK installed alongside stability test
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          app=Path("app/build.gradle.kts")
+          s=app.read_text()
+          before='applicationId = "com.gamelingo.pro.v6test"'
+          assert s.count(before)==1
+          s=s.replace(before,'applicationId = "com.gamelingo.pro.v6stability"')
+          s=re.sub(r'versionName = "6[.]0[.]0-alpha[.][^"]+"',
+                   'versionName = "6.0.0-alpha.74-stability"',s,count=1)
+          app.write_text(s)
+          strings=Path("app/src/main/res/values/strings.xml")
+          t=strings.read_text()
+          assert '<string name="app_name">GameLingo V6 Test</string>' in t
+          strings.write_text(t.replace('GameLingo V6 Test</string>','GameLingo V6 Stabilite</string>'))
+          for p in Path("app/src/test").rglob("*.kt"):
+              text=p.read_text()
+              if 'GameLingo V6 Test</string>' in text:
+                  p.write_text(text.replace('GameLingo V6 Test</string>','GameLingo V6 Stabilite</string>'))
           PY
 
       - uses: actions/setup-java@v5
@@ -176,7 +206,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: GameLingo-V6-Test-APK
+          name: GameLingo-V6-Android-Stability-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -190,7 +220,7 @@ jobs:
           python3 - <<'PY'
           import pathlib, zipfile
           root=pathlib.Path('.')
-          with zipfile.ZipFile('GameLingo-V6-Foundation-Kaynak.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+          with zipfile.ZipFile('GameLingo-V6-Android-Stability-Kaynak.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
               for base in ('app/src', 'app/build.gradle.kts', 'settings.gradle.kts',
                            'build.gradle.kts', 'gradle.properties', 'tools/integrate_gt_original_v1849.py',
                            'tools/apply_gt_original_563.py', 'tools/gt563',
@@ -205,6 +235,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: GameLingo-V6-Foundation-Kaynak
-          path: GameLingo-V6-Foundation-Kaynak.zip
+          name: GameLingo-V6-Android-Stability-Kaynak
+          path: GameLingo-V6-Android-Stability-Kaynak.zip
           if-no-files-found: error
